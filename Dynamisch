@@ -1,0 +1,690 @@
+input_boolean:
+  dynamisch_15_minuten:
+    name: Dynamisch 15 Minuten
+    initial: off
+    icon: mdi:clock-time-three-outline
+
+input_number:
+  dynamisch_minimale_spread:
+    name: Dynamisch Minimale Spread
+    min: 0
+    max: 100
+    step: 1
+    unit_of_measurement: '%'
+    mode: box
+
+  dynamisch_goedkoopste_x_periode:
+    name: Dynamisch Goedkoopste X Periode
+    min: 0
+    max: 24
+    step: 1
+    mode: box
+
+  dynamisch_duurste_x_periode:
+    name: Dynamisch Duurste X Periode
+    min: 0
+    max: 24
+    step: 1
+    mode: box
+
+  dynamisch_goedkoopste_x_periode_morgen:
+    name: Dynamisch Goedkoopste X Periode Morgen
+    min: 0
+    max: 24
+    step: 1
+    mode: box
+
+  dynamisch_duurste_x_periode_morgen:
+    name: Dynamisch Duurste X Periode Morgen
+    min: 0
+    max: 24
+    step: 1
+    mode: box
+
+template:
+  - sensor:
+      - name: "Dynamisch Nordpool"
+        unique_id: dynamisch_nordpool
+        unit_of_measurement: "€/kWh"
+        state: "{{ states('sensor.<NORDPOOL>') }}"
+        attributes:
+          raw_today: >
+            {% set use_15_min = is_state('input_boolean.dynamisch_15_minuten', 'on') %}
+            {% set raw = state_attr('sensor.<NORDPOOL>', 'raw_today') %}
+            {% if raw %}
+              [
+              {% if use_15_min %}
+                {# Gebruik kwartierwaarden zonder groepering #}
+                {% for item in raw %}
+                  {
+                    "start": "{{ item.start.isoformat() }}",
+                    "end": "{{ item.end.isoformat() }}",
+                    "value": {{ item.value }}
+                  }{% if not loop.last %},{% endif %}
+                {% endfor %}
+              {% else %}
+                {# Groepeer per uur en gemiddeld #}
+                {% set hourly = raw | groupby('start.hour') %}
+                {% for hour_group in hourly %}
+                  {% set values = hour_group.list | map(attribute='value') | list %}
+                  {% set hour_start = hour_group.list[0].start.replace(minute=0, second=0, microsecond=0) %}
+                  {% set hour_end = hour_start + timedelta(hours=1) %}
+                  {
+                    "start": "{{ hour_start.isoformat() }}",
+                    "end": "{{ hour_end.isoformat() }}",
+                    "value": {{ (values | sum / values | count) | round(5) }}
+                  }{% if not loop.last %},{% endif %}
+                {% endfor %}
+              {% endif %}
+              ]
+            {% else %}
+              []
+            {% endif %}
+
+          raw_tomorrow: >
+            {% set use_15_min = is_state('input_boolean.dynamisch_15_minuten', 'on') %}
+            {% set raw = state_attr('sensor.<NORDPOOL>', 'raw_tomorrow') %}
+            {% if raw %}
+              [
+              {% if use_15_min %}
+                {# Gebruik kwartierwaarden zonder groepering #}
+                {% for item in raw %}
+                  {
+                    "start": "{{ item.start.isoformat() }}",
+                    "end": "{{ item.end.isoformat() }}",
+                    "value": {{ item.value }}
+                  }{% if not loop.last %},{% endif %}
+                {% endfor %}
+              {% else %}
+                {# Groepeer per uur en gemiddeld #}
+                {% set hourly = raw | groupby('start.hour') %}
+                {% for hour_group in hourly %}
+                  {% set values = hour_group.list | map(attribute='value') | list %}
+                  {% set hour_start = hour_group.list[0].start.replace(minute=0, second=0, microsecond=0) %}
+                  {% set hour_end = hour_start + timedelta(hours=1) %}
+                  {
+                    "start": "{{ hour_start.isoformat() }}",
+                    "end": "{{ hour_end.isoformat() }}",
+                    "value": {{ (values | sum / values | count) | round(5) }}
+                  }{% if not loop.last %},{% endif %}
+                {% endfor %}
+              {% endif %}
+              ]
+            {% else %}
+              []
+            {% endif %}
+
+      - name: "Dynamisch Spread Indicatie"
+        unique_id: dynamisch_spread_indicatie
+        icon: mdi:percent-box
+        state: >
+          {% set prijzen = state_attr('sensor.dynamisch_goedkoopste_periode', 'raw_today') %}
+          {% set aantal_goedkoop = states('input_number.dynamisch_goedkoopste_x_periode') | int %}
+          {% set aantal_duur = states('input_number.dynamisch_duurste_x_periode') | int %}
+
+          {% if prijzen is iterable and prijzen | count >= aantal_goedkoop and aantal_goedkoop > 0 %}
+            {% set prijzen_per_uur = prijzen | sort(attribute='value') %}
+            {% set goedkoopste_uren = prijzen_per_uur[:aantal_goedkoop] %}
+            {% set goedkope_starttijden = goedkoopste_uren | map(attribute='start') | list %}
+
+            {% if aantal_duur > 0 %}
+              {% set duurste_uren = prijzen_per_uur[-aantal_duur:] %}
+            {% else %}
+              {% set duurste_uren = prijzen | rejectattr('start', 'in', goedkope_starttijden) | list %}
+            {% endif %}
+
+            {% set avg_goedkoop = goedkoopste_uren | map(attribute='value') | sum / goedkoopste_uren | count %}
+            {% set avg_duur = duurste_uren | map(attribute='value') | sum / duurste_uren | count %}
+            {% set spread_pct = ((avg_duur - avg_goedkoop) / avg_goedkoop) * 100 %}
+            {{ spread_pct | round(1) }}
+          {% else %}
+            unavailable
+          {% endif %}
+        unit_of_measurement: "%"
+        attributes:
+          goedkoopste_uren: >
+            {% set prijzen = state_attr('sensor.dynamisch_goedkoopste_periode', 'raw_today') %}
+            {% set aantal_goedkoop = states('input_number.dynamisch_goedkoopste_x_periode') | int %}
+            {% if prijzen is iterable and prijzen | count >= aantal_goedkoop and aantal_goedkoop > 0 %}
+              {% set prijzen_per_uur = prijzen | sort(attribute='value') %}
+              {% set goedkoopste_uren = prijzen_per_uur[:aantal_goedkoop] %}
+              [
+              {% for uur in goedkoopste_uren %}
+                {{ '"' ~ (uur.start | as_datetime).strftime('%H:%M') ~ ' - €' ~ ('%.4f' | format(uur.value)) ~ '"' }}{% if not loop.last %}, {% endif %}
+              {% endfor %}
+              ]
+            {% else %}
+              []
+            {% endif %}
+          gemiddelde_goedkoop: >
+            {% set prijzen = state_attr('sensor.dynamisch_goedkoopste_periode', 'raw_today') %}
+            {% set aantal_goedkoop = states('input_number.dynamisch_goedkoopste_x_periode') | int %}
+            {% if prijzen is iterable and prijzen | count >= aantal_goedkoop and aantal_goedkoop > 0 %}
+              {% set goedkoopste_uren = (prijzen | sort(attribute='value'))[:aantal_goedkoop] %}
+              {% set avg_goedkoop = goedkoopste_uren | map(attribute='value') | sum / goedkoopste_uren | count %}
+              €{{ '%.4f' | format(avg_goedkoop) }}
+            {% else %}
+              n.v.t.
+            {% endif %}
+          duurste_uren: >
+            {% set prijzen = state_attr('sensor.dynamisch_goedkoopste_periode', 'raw_today') %}
+            {% set aantal_goedkoop = states('input_number.dynamisch_goedkoopste_x_periode') | int %}
+            {% set aantal_duur = states('input_number.dynamisch_duurste_x_periode') | int %}
+            {% if prijzen is iterable and prijzen | count >= aantal_goedkoop and aantal_goedkoop > 0 %}
+              {% set prijzen_per_uur = prijzen | sort(attribute='value') %}
+              {% set goedkope_starttijden = prijzen_per_uur[:aantal_goedkoop] | map(attribute='start') | list %}
+              {% if aantal_duur > 0 %}
+                {% set duurste_uren = prijzen_per_uur[-aantal_duur:] %}
+              {% else %}
+                {% set duurste_uren = prijzen | rejectattr('start', 'in', goedkope_starttijden) | list %}
+              {% endif %}
+              [
+              {% for uur in duurste_uren %}
+                {{ '"' ~ (uur.start | as_datetime).strftime('%H:%M') ~ ' - €' ~ ('%.4f' | format(uur.value)) ~ '"' }}{% if not loop.last %}, {% endif %}
+              {% endfor %}
+              ]
+            {% else %}
+              []
+            {% endif %}
+          gemiddelde_duur: >
+            {% set prijzen = state_attr('sensor.dynamisch_goedkoopste_periode', 'raw_today') %}
+            {% set aantal_goedkoop = states('input_number.dynamisch_goedkoopste_x_periode') | int %}
+            {% set aantal_duur = states('input_number.dynamisch_duurste_x_periode') | int %}
+            {% if prijzen is iterable and prijzen | count >= aantal_goedkoop and aantal_goedkoop > 0 %}
+              {% set prijzen_per_uur = prijzen | sort(attribute='value') %}
+              {% set goedkope_starttijden = prijzen_per_uur[:aantal_goedkoop] | map(attribute='start') | list %}
+              {% if aantal_duur > 0 %}
+                {% set duurste_uren = prijzen_per_uur[-aantal_duur:] %}
+              {% else %}
+                {% set duurste_uren = prijzen | rejectattr('start', 'in', goedkope_starttijden) | list %}
+              {% endif %}
+              {% set avg_duur = duurste_uren | map(attribute='value') | sum / duurste_uren | count %}
+              €{{ '%.4f' | format(avg_duur) }}
+            {% else %}
+              n.v.t.
+            {% endif %}
+          spread_berekening: >
+            (gemiddeld duur - goedkoop) / goedkoop × 100
+
+      - name: "Dynamisch Spread Indicatie NOM"
+        unique_id: dynamisch_spread_indicatie_NOM
+        icon: mdi:percent-box
+        state: >
+          {% set prijzen = state_attr('sensor.dynamisch_goedkoopste_periode', 'raw_today') %}
+          {% set aantal_goedkoop = states('input_number.dynamisch_goedkoopste_x_periode') | int %}
+          {% set aantal_duur = states('input_number.dynamisch_duurste_x_periode') | int %}
+
+          {% if prijzen is iterable and prijzen | count >= aantal_goedkoop and aantal_goedkoop > 0 %}
+            {% set prijzen_per_uur = prijzen | sort(attribute='value') %}
+            {% set goedkoopste_uren = prijzen_per_uur[:aantal_goedkoop] %}
+            {% set goedkope_starttijden = goedkoopste_uren | map(attribute='start') | list %}
+
+            {% set duurste_prijzen = state_attr('sensor.dynamisch_goedkoopste_periode', 'duurste_na_eerste_goedkope') %}
+            {% if duurste_prijzen is none %}
+              {% set duurste_prijzen = [] %}
+            {% endif %}
+            {% set duurste_prijzen_sort = duurste_prijzen | sort(attribute='value', reverse=true) %}
+
+            {% if aantal_duur > 0 %}
+              {% set duurste_uren = duurste_prijzen_sort[:aantal_duur] %}
+            {% else %}
+              {% set duurste_uren = duurste_prijzen_sort %}
+            {% endif %}
+
+            {% set avg_goedkoop = goedkoopste_uren | map(attribute='value') | sum / goedkoopste_uren | count %}
+            {% set avg_duur = duurste_uren | map(attribute='value') | sum / duurste_uren | count %}
+            {% set spread_pct = ((avg_duur - avg_goedkoop) / avg_goedkoop) * 100 %}
+            {{ spread_pct | round(1) }}
+          {% else %}
+            unavailable
+          {% endif %}
+        unit_of_measurement: "%"
+        attributes:
+          goedkoopste_uren: >
+            {% set prijzen = state_attr('sensor.dynamisch_goedkoopste_periode', 'raw_today') %}
+            {% set aantal_goedkoop = states('input_number.dynamisch_goedkoopste_x_periode') | int %}
+            {% if prijzen is iterable and prijzen | count >= aantal_goedkoop and aantal_goedkoop > 0 %}
+              {% set prijzen_per_uur = prijzen | sort(attribute='value') %}
+              {% set goedkoopste_uren = prijzen_per_uur[:aantal_goedkoop] %}
+              [
+              {% for uur in goedkoopste_uren %}
+                {{ '"' ~ (uur.start | as_datetime).strftime('%H:%M') ~ ' - €' ~ ('%.4f' | format(uur.value)) ~ '"' }}{% if not loop.last %}, {% endif %}
+              {% endfor %}
+              ]
+            {% else %}
+              []
+            {% endif %}
+          gemiddelde_goedkoop: >
+            {% set prijzen = state_attr('sensor.dynamisch_goedkoopste_periode', 'raw_today') %}
+            {% set aantal_goedkoop = states('input_number.dynamisch_goedkoopste_x_periode') | int %}
+            {% if prijzen is iterable and prijzen | count >= aantal_goedkoop and aantal_goedkoop > 0 %}
+              {% set goedkoopste_uren = (prijzen | sort(attribute='value'))[:aantal_goedkoop] %}
+              {% set avg_goedkoop = goedkoopste_uren | map(attribute='value') | sum / goedkoopste_uren | count %}
+              €{{ '%.4f' | format(avg_goedkoop) }}
+            {% else %}
+              n.v.t.
+            {% endif %}
+          duurste_uren: >
+            {% set aantal_duur = states('input_number.dynamisch_duurste_x_periode') | int %}
+            {% set duurste_prijzen = state_attr('sensor.dynamisch_goedkoopste_periode', 'duurste_na_eerste_goedkope') %}
+            {% if duurste_prijzen is none %}
+              {% set duurste_prijzen = [] %}
+            {% endif %}
+            {% set duurste_prijzen_sort = duurste_prijzen | sort(attribute='value', reverse=true) %}
+            {% if aantal_duur > 0 %}
+              {% set duurste_uren = duurste_prijzen_sort[:aantal_duur] %}
+            {% else %}
+              {% set duurste_uren = duurste_prijzen_sort %}
+            {% endif %}
+            [
+            {% for uur in duurste_uren %}
+              {{ '"' ~ (uur.start | as_datetime).strftime('%H:%M') ~ ' - €' ~ ('%.4f' | format(uur.value)) ~ '"' }}{% if not loop.last %}, {% endif %}
+            {% endfor %}
+            ]
+          gemiddelde_duur: >
+            {% set aantal_duur = states('input_number.dynamisch_duurste_x_periode') | int %}
+            {% set duurste_prijzen = state_attr('sensor.dynamisch_goedkoopste_periode', 'duurste_na_eerste_goedkope') %}
+            {% if duurste_prijzen is none %}
+              {% set duurste_prijzen = [] %}
+            {% endif %}
+            {% set duurste_prijzen_sort = duurste_prijzen | sort(attribute='value', reverse=true) %}
+            {% if aantal_duur > 0 %}
+              {% set duurste_uren = duurste_prijzen_sort[:aantal_duur] %}
+            {% else %}
+              {% set duurste_uren = duurste_prijzen_sort %}
+            {% endif %}
+            {% if duurste_uren | count > 0 %}
+              {% set avg_duur = duurste_uren | map(attribute='value') | sum / duurste_uren | count %}
+              €{{ '%.4f' | format(avg_duur) }}
+            {% else %}
+              n.v.t.
+            {% endif %}
+          spread_berekening: >
+            (gemiddeld duur - goedkoop) / goedkoop × 100
+
+      - name: "Dynamisch Spread Indicatie Morgen"
+        unique_id: dynamisch_spread_indicatie_morgen
+        icon: mdi:percent-box
+        state: >
+          {% set prijzen = state_attr('sensor.dynamisch_goedkoopste_periode', 'raw_tomorrow') %}
+          {% set aantal_goedkoop = states('input_number.dynamisch_goedkoopste_x_periode_morgen') | int %}
+          {% set aantal_duur = states('input_number.dynamisch_duurste_x_periode_morgen') | int %}
+
+          {% if prijzen is iterable and prijzen | count >= aantal_goedkoop and aantal_goedkoop > 0 %}
+            {% set prijzen_per_uur = prijzen | sort(attribute='value') %}
+            {% set goedkoopste_uren = prijzen_per_uur[:aantal_goedkoop] %}
+            {% set goedkope_starttijden = goedkoopste_uren | map(attribute='start') | list %}
+
+            {% if aantal_duur > 0 %}
+              {% set duurste_uren = prijzen_per_uur[-aantal_duur:] %}
+            {% else %}
+              {% set duurste_uren = prijzen | rejectattr('start', 'in', goedkope_starttijden) | list %}
+            {% endif %}
+
+            {% set avg_goedkoop = goedkoopste_uren | map(attribute='value') | sum / goedkoopste_uren | count %}
+            {% set avg_duur = duurste_uren | map(attribute='value') | sum / duurste_uren | count %}
+            {% set spread_pct = ((avg_duur - avg_goedkoop) / avg_goedkoop) * 100 %}
+            {{ spread_pct | round(1) }}
+          {% else %}
+            unavailable
+          {% endif %}
+        unit_of_measurement: "%"
+        attributes:
+          goedkoopste_uren: >
+            {% set prijzen = state_attr('sensor.dynamisch_goedkoopste_periode', 'raw_tomorrow') %}
+            {% set aantal_goedkoop = states('input_number.dynamisch_goedkoopste_x_periode_morgen') | int %}
+            {% if prijzen is iterable and prijzen | count >= aantal_goedkoop and aantal_goedkoop > 0 %}
+              {% set prijzen_per_uur = prijzen | sort(attribute='value') %}
+              {% set goedkoopste_uren = prijzen_per_uur[:aantal_goedkoop] %}
+              [
+              {% for uur in goedkoopste_uren %}
+                {{ '"' ~ (uur.start | as_datetime).strftime('%H:%M') ~ ' - €' ~ ('%.4f' | format(uur.value)) ~ '"' }}{% if not loop.last %}, {% endif %}
+              {% endfor %}
+              ]
+            {% else %}
+              []
+            {% endif %}
+          gemiddelde_goedkoop: >
+            {% set prijzen = state_attr('sensor.dynamisch_goedkoopste_periode', 'raw_tomorrow') %}
+            {% set aantal_goedkoop = states('input_number.dynamisch_goedkoopste_x_periode_morgen') | int %}
+            {% if prijzen is iterable and prijzen | count >= aantal_goedkoop and aantal_goedkoop > 0 %}
+              {% set goedkoopste_uren = (prijzen | sort(attribute='value'))[:aantal_goedkoop] %}
+              {% set avg_goedkoop = goedkoopste_uren | map(attribute='value') | sum / goedkoopste_uren | count %}
+              €{{ '%.4f' | format(avg_goedkoop) }}
+            {% else %}
+              n.v.t.
+            {% endif %}
+          duurste_uren: >
+            {% set prijzen = state_attr('sensor.dynamisch_goedkoopste_periode', 'raw_tomorrow') %}
+            {% set aantal_goedkoop = states('input_number.dynamisch_goedkoopste_x_periode_morgen') | int %}
+            {% set aantal_duur = states('input_number.dynamisch_duurste_x_periode_morgen') | int %}
+            {% if prijzen is iterable and prijzen | count >= aantal_goedkoop and aantal_goedkoop > 0 %}
+              {% set prijzen_per_uur = prijzen | sort(attribute='value') %}
+              {% set goedkope_starttijden = prijzen_per_uur[:aantal_goedkoop] | map(attribute='start') | list %}
+              {% if aantal_duur > 0 %}
+                {% set duurste_uren = prijzen_per_uur[-aantal_duur:] %}
+              {% else %}
+                {% set duurste_uren = prijzen | rejectattr('start', 'in', goedkope_starttijden) | list %}
+              {% endif %}
+              [
+              {% for uur in duurste_uren %}
+                {{ '"' ~ (uur.start | as_datetime).strftime('%H:%M') ~ ' - €' ~ ('%.4f' | format(uur.value)) ~ '"' }}{% if not loop.last %}, {% endif %}
+              {% endfor %}
+              ]
+            {% else %}
+              []
+            {% endif %}
+          gemiddelde_duur: >
+            {% set prijzen = state_attr('sensor.dynamisch_goedkoopste_periode', 'raw_tomorrow') %}
+            {% set aantal_goedkoop = states('input_number.dynamisch_goedkoopste_x_periode_morgen') | int %}
+            {% set aantal_duur = states('input_number.dynamisch_duurste_x_periode_morgen') | int %}
+            {% if prijzen is iterable and prijzen | count >= aantal_goedkoop and aantal_goedkoop > 0 %}
+              {% set prijzen_per_uur = prijzen | sort(attribute='value') %}
+              {% set goedkope_starttijden = prijzen_per_uur[:aantal_goedkoop] | map(attribute='start') | list %}
+              {% if aantal_duur > 0 %}
+                {% set duurste_uren = prijzen_per_uur[-aantal_duur:] %}
+              {% else %}
+                {% set duurste_uren = prijzen | rejectattr('start', 'in', goedkope_starttijden) | list %}
+              {% endif %}
+              {% set avg_duur = duurste_uren | map(attribute='value') | sum / duurste_uren | count %}
+              €{{ '%.4f' | format(avg_duur) }}
+            {% else %}
+              n.v.t.
+            {% endif %}
+          spread_berekening: >
+            (gemiddeld duur - goedkoop) / goedkoop × 100
+
+      - name: "Dynamisch Spread Indicatie NOM Morgen"
+        unique_id: dynamisch_spread_indicatie_nom_morgen
+        icon: mdi:percent-box
+        state: >
+          {% set prijzen = state_attr('sensor.dynamisch_goedkoopste_periode', 'raw_tomorrow') %}
+          {% set aantal_goedkoop = states('input_number.dynamisch_goedkoopste_x_periode_morgen') | int %}
+          {% set aantal_duur = states('input_number.dynamisch_duurste_x_periode_morgen') | int %}
+
+          {% if prijzen is iterable and prijzen | count >= aantal_goedkoop and aantal_goedkoop > 0 %}
+            {% set prijzen_per_uur = prijzen | sort(attribute='value') %}
+            {% set goedkoopste_uren = prijzen_per_uur[:aantal_goedkoop] %}
+            {% set goedkope_starttijden = goedkoopste_uren | map(attribute='start') | list %}
+
+            {% set duurste_prijzen = state_attr('sensor.dynamisch_goedkoopste_periode', 'duurste_na_eerste_goedkope_morgen') %}
+            {% if duurste_prijzen is none %}
+              {% set duurste_prijzen = [] %}
+            {% endif %}
+            {% set duurste_prijzen_sort = duurste_prijzen | sort(attribute='value', reverse=true) %}
+
+            {% if aantal_duur > 0 %}
+              {% set duurste_uren = duurste_prijzen_sort[:aantal_duur] %}
+            {% else %}
+              {% set duurste_uren = duurste_prijzen_sort %}
+            {% endif %}
+
+            {% set avg_goedkoop = goedkoopste_uren | map(attribute='value') | sum / goedkoopste_uren | count %}
+            {% set avg_duur = duurste_uren | map(attribute='value') | sum / duurste_uren | count %}
+            {% set spread_pct = ((avg_duur - avg_goedkoop) / avg_goedkoop) * 100 %}
+            {{ spread_pct | round(1) }}
+          {% else %}
+            unavailable
+          {% endif %}
+        unit_of_measurement: "%"
+        attributes:
+          goedkoopste_uren: >
+            {% set prijzen = state_attr('sensor.dynamisch_goedkoopste_periode', 'raw_tomorrow') %}
+            {% set aantal_goedkoop = states('input_number.dynamisch_goedkoopste_x_periode_morgen') | int %}
+            {% if prijzen is iterable and prijzen | count >= aantal_goedkoop and aantal_goedkoop > 0 %}
+              {% set prijzen_per_uur = prijzen | sort(attribute='value') %}
+              {% set goedkoopste_uren = prijzen_per_uur[:aantal_goedkoop] %}
+              [
+              {% for uur in goedkoopste_uren %}
+                {{ '"' ~ (uur.start | as_datetime).strftime('%H:%M') ~ ' - €' ~ ('%.4f' | format(uur.value)) ~ '"' }}{% if not loop.last %}, {% endif %}
+              {% endfor %}
+              ]
+            {% else %}
+              []
+            {% endif %}
+          gemiddelde_goedkoop: >
+            {% set prijzen = state_attr('sensor.dynamisch_goedkoopste_periode', 'raw_tomorrow') %}
+            {% set aantal_goedkoop = states('input_number.dynamisch_goedkoopste_x_periode_morgen') | int %}
+            {% if prijzen is iterable and prijzen | count >= aantal_goedkoop and aantal_goedkoop > 0 %}
+              {% set goedkoopste_uren = (prijzen | sort(attribute='value'))[:aantal_goedkoop] %}
+              {% set avg_goedkoop = goedkoopste_uren | map(attribute='value') | sum / goedkoopste_uren | count %}
+              €{{ '%.4f' | format(avg_goedkoop) }}
+            {% else %}
+              n.v.t.
+            {% endif %}
+          duurste_uren: >
+            {% set aantal_duur = states('input_number.dynamisch_duurste_x_periode_morgen') | int %}
+            {% set duurste_prijzen = state_attr('sensor.dynamisch_goedkoopste_periode', 'duurste_na_eerste_goedkope_morgen') %}
+            {% if duurste_prijzen is none %}
+              {% set duurste_prijzen = [] %}
+            {% endif %}
+            {% set duurste_prijzen_sort = duurste_prijzen | sort(attribute='value', reverse=true) %}
+            {% if aantal_duur > 0 %}
+              {% set duurste_uren = duurste_prijzen_sort[:aantal_duur] %}
+            {% else %}
+              {% set duurste_uren = duurste_prijzen_sort %}
+            {% endif %}
+            [
+            {% for uur in duurste_uren %}
+              {{ '"' ~ (uur.start | as_datetime).strftime('%H:%M') ~ ' - €' ~ ('%.4f' | format(uur.value)) ~ '"' }}{% if not loop.last %}, {% endif %}
+            {% endfor %}
+            ]
+          gemiddelde_duur: >
+            {% set aantal_duur = states('input_number.dynamisch_duurste_x_periode_morgen') | int %}
+            {% set duurste_prijzen = state_attr('sensor.dynamisch_goedkoopste_periode', 'duurste_na_eerste_goedkope_morgen') %}
+            {% if duurste_prijzen is none %}
+              {% set duurste_prijzen = [] %}
+            {% endif %}
+            {% set duurste_prijzen_sort = duurste_prijzen | sort(attribute='value', reverse=true) %}
+            {% if aantal_duur > 0 %}
+              {% set duurste_uren = duurste_prijzen_sort[:aantal_duur] %}
+            {% else %}
+              {% set duurste_uren = duurste_prijzen_sort %}
+            {% endif %}
+            {% if duurste_uren | count > 0 %}
+              {% set avg_duur = duurste_uren | map(attribute='value') | sum / duurste_uren | count %}
+              €{{ '%.4f' | format(avg_duur) }}
+            {% else %}
+              n.v.t.
+            {% endif %}
+          spread_berekening: >
+            (gemiddeld duur - goedkoop) / goedkoop × 100
+
+      - name: "Dynamisch Duurste Periode"
+        unique_id: dynamisch_duurste_periode
+        icon: mdi:progress-clock
+        state: >
+          {% set prijzen = state_attr('sensor.dynamisch_goedkoopste_periode', 'raw_today') %}
+          {% set aantal_goedkoop = states('input_number.dynamisch_goedkoopste_x_periode') | int %}
+          {% set aantal_duur = states('input_number.dynamisch_duurste_x_periode') | int %}
+          {% if prijzen is iterable and prijzen | count >= aantal_goedkoop %}
+            {% set prijzen_per_uur = prijzen | sort(attribute='value') %}
+            {% set goedkoopste_uren = prijzen_per_uur[:aantal_goedkoop] %}
+            {% set goedkope_starttijden = goedkoopste_uren | map(attribute='start') | list %}
+
+            {% if aantal_duur > 0 %}
+              {% set duurste_uren = prijzen_per_uur[-aantal_duur:] %}
+            {% else %}
+              {% set duurste_uren = prijzen | rejectattr('start', 'in', goedkope_starttijden) | list %}
+            {% endif %}
+
+            {% set dure_uren = duurste_uren | map(attribute='start') | map('as_datetime') | map(attribute='hour') | list %}
+            {% set huidige_uur = now().hour %}
+
+            {% if huidige_uur in dure_uren %}
+              Ja
+            {% else %}
+              Nee
+            {% endif %}
+          {% else %}
+            Onbekend
+          {% endif %}
+        attributes:
+          raw_today: >
+            {% set prijzen = state_attr('sensor.dynamisch_goedkoopste_periode', 'raw_today') %}
+            {% set aantal_goedkoop = states('input_number.dynamisch_goedkoopste_x_periode') | int %}
+            {% set aantal_duur = states('input_number.dynamisch_duurste_x_periode') | int %}
+            {% if prijzen is iterable and prijzen | count >= aantal_goedkoop %}
+              {% set prijzen_per_uur = prijzen | sort(attribute='value') %}
+              {% set goedkoopste_uren = prijzen_per_uur[:aantal_goedkoop] %}
+              {% set goedkope_starttijden = goedkoopste_uren | map(attribute='start') | list %}
+
+              {% if aantal_duur > 0 %}
+                {% set duurste_uren = prijzen_per_uur[-aantal_duur:] %}
+              {% else %}
+                {% set duurste_uren = prijzen | rejectattr('start', 'in', goedkope_starttijden) | list %}
+              {% endif %}
+              {% set dure_starttijden = duurste_uren | map(attribute='start') | list %}
+
+              [
+              {% for uur in prijzen %}
+                {
+                  "start": "{{ uur.start }}",
+                  "end": "{{ uur.end }}",
+                  "value": {{ uur.value }},
+                  "goedkoop": "{% if uur.start in goedkope_starttijden %}ja{% else %}nee{% endif %}",
+                  "duur": "{% if uur.start in dure_starttijden %}ja{% else %}nee{% endif %}"
+                }{% if not loop.last %},{% endif %}
+              {% endfor %}
+              ]
+            {% else %}
+              []
+            {% endif %}
+
+      - name: "Dynamisch Goedkoopste Periode"
+        unique_id: dynamisch_goedkoopste_periode
+        icon: mdi:progress-clock
+        state: >
+          {% set prijzen = state_attr('sensor.dynamisch_nordpool', 'raw_today') %}
+          {% set aantal_goedkoop = states('input_number.dynamisch_goedkoopste_x_periode') | int %}
+          {% if prijzen is iterable and prijzen | count >= aantal_goedkoop %}
+            {% set prijzen_per_uur = prijzen | sort(attribute='value') %}
+            {% set goedkoopste_uren = prijzen_per_uur[:aantal_goedkoop] %}
+            {% set goedkope_uren = goedkoopste_uren | map(attribute='start') | map('as_datetime') | map(attribute='hour') | list %}
+            {% set huidige_uur = now().hour %}
+            {% if huidige_uur in goedkope_uren %}
+              Ja
+            {% else %}
+              Nee
+            {% endif %}
+          {% else %}
+            Onbekend
+          {% endif %}
+        attributes:
+          raw_today: >
+            {% set prijzen = state_attr('sensor.dynamisch_nordpool', 'raw_today') %}
+            {% set aantal_goedkoop = states('input_number.dynamisch_goedkoopste_x_periode') | int %}
+            {% set aantal_duur = states('input_number.dynamisch_duurste_x_periode') | int %}
+            {% if prijzen is iterable and prijzen | count >= aantal_goedkoop %}
+              {% set prijzen_per_uur = prijzen | sort(attribute='value') %}
+              {% set goedkoopste_uren = prijzen_per_uur[:aantal_goedkoop] %}
+              {% set goedkope_starttijden = goedkoopste_uren | map(attribute='start') | list %}
+              {% if aantal_duur > 0 %}
+                {% set duurste_uren = prijzen_per_uur[-aantal_duur:] %}
+              {% else %}
+                {% set duurste_uren = prijzen | rejectattr('start', 'in', goedkope_starttijden) | list %}
+              {% endif %}
+              {% set dure_starttijden = duurste_uren | map(attribute='start') | list %}
+              [
+              {% for uur in prijzen %}
+                {
+                  "start": "{{ uur.start }}",
+                  "end": "{{ uur.end }}",
+                  "value": {{ uur.value }},
+                  "goedkoop": "{{ 'ja' if uur.start in goedkope_starttijden else 'nee' }}",
+                  "duur": "{{ 'ja' if uur.start in dure_starttijden else 'nee' }}"
+                }{% if not loop.last %},{% endif %}
+              {% endfor %}
+              ]
+            {% else %}
+              []
+            {% endif %}
+
+          raw_tomorrow: >
+            {% set prijzen = state_attr('sensor.dynamisch_nordpool', 'raw_tomorrow') %}
+            {% set aantal_goedkoop = states('input_number.dynamisch_goedkoopste_x_periode_morgen') | int %}
+            {% set aantal_duur = states('input_number.dynamisch_duurste_x_periode_morgen') | int %}
+            {% if prijzen is iterable and prijzen | count >= aantal_goedkoop %}
+              {% set prijzen_per_uur = prijzen | sort(attribute='value') %}
+              {% set goedkoopste_uren = prijzen_per_uur[:aantal_goedkoop] %}
+              {% set goedkope_starttijden = goedkoopste_uren | map(attribute='start') | list %}
+              {% if aantal_duur > 0 %}
+                {% set duurste_uren = prijzen_per_uur[-aantal_duur:] %}
+              {% else %}
+                {% set duurste_uren = prijzen | rejectattr('start', 'in', goedkope_starttijden) | list %}
+              {% endif %}
+              {% set dure_starttijden = duurste_uren | map(attribute='start') | list %}
+              [
+              {% for uur in prijzen %}
+                {
+                  "start": "{{ uur.start }}",
+                  "end": "{{ uur.end }}",
+                  "value": {{ uur.value }},
+                  "goedkoop": "{{ 'ja' if uur.start in goedkope_starttijden else 'nee' }}",
+                  "duur": "{{ 'ja' if uur.start in dure_starttijden else 'nee' }}"
+                }{% if not loop.last %},{% endif %}
+              {% endfor %}
+              ]
+            {% else %}
+              []
+            {% endif %}
+
+          duurste_na_eerste_goedkope: >
+            {% set prijzen = state_attr('sensor.dynamisch_nordpool', 'raw_today') %}
+            {% set aantal_goedkoop = states('input_number.dynamisch_goedkoopste_x_periode') | int %}
+            {% set aantal_duur = states('input_number.dynamisch_duurste_x_periode') | int %}
+            {% if prijzen is iterable and prijzen | count >= aantal_goedkoop and aantal_goedkoop > 0 %}
+              {% set prijzen_per_uur = prijzen | sort(attribute='value') %}
+              {% set goedkoopste_uren = prijzen_per_uur[:aantal_goedkoop] %}
+              {% set goedkope_starttijden = goedkoopste_uren | map(attribute='start') | list %}
+              {% set eerste_goedkoop = goedkope_starttijden | map('as_datetime') | sort | first %}
+              {% if aantal_duur > 0 %}
+                {% set duurste_uren = prijzen_per_uur[-aantal_duur:] %}
+              {% else %}
+                {% set duurste_uren = prijzen | rejectattr('start', 'in', goedkope_starttijden) | list %}
+              {% endif %}
+              {% set duurste_uren_sorted = duurste_uren | sort(attribute='start') %}
+              [
+              {% for uur in duurste_uren_sorted if uur.start | as_datetime > eerste_goedkoop %}
+                {
+                  "start": "{{ uur.start }}",
+                  "end": "{{ uur.end }}",
+                  "value": {{ uur.value }},
+                  "goedkoop": "{{ 'ja' if uur.start in goedkope_starttijden else 'nee' }}",
+                  "duur": "ja"
+                }{% if not loop.last %},{% endif %}
+              {% endfor %}
+              ]
+            {% else %}
+              []
+            {% endif %}
+
+          duurste_na_eerste_goedkope_morgen: >
+            {% set prijzen = state_attr('sensor.dynamisch_nordpool', 'raw_tomorrow') %}
+            {% set aantal_goedkoop = states('input_number.dynamisch_goedkoopste_x_periode_morgen') | int %}
+            {% set aantal_duur = states('input_number.dynamisch_duurste_x_periode_morgen') | int %}
+            {% if prijzen is iterable and prijzen | count >= aantal_goedkoop and aantal_goedkoop > 0 %}
+              {% set prijzen_per_uur = prijzen | sort(attribute='value') %}
+              {% set goedkoopste_uren = prijzen_per_uur[:aantal_goedkoop] %}
+              {% set goedkope_starttijden = goedkoopste_uren | map(attribute='start') | list %}
+              {% set eerste_goedkoop = goedkope_starttijden | map('as_datetime') | sort | first %}
+              {% if aantal_duur > 0 %}
+                {% set duurste_uren = prijzen_per_uur[-aantal_duur:] %}
+              {% else %}
+                {% set duurste_uren = prijzen | rejectattr('start', 'in', goedkope_starttijden) | list %}
+              {% endif %}
+              {% set duurste_uren_sorted = duurste_uren | sort(attribute='start') %}
+              [
+              {% for uur in duurste_uren_sorted if uur.start | as_datetime > eerste_goedkoop %}
+                {
+                  "start": "{{ uur.start }}",
+                  "end": "{{ uur.end }}",
+                  "value": {{ uur.value }},
+                  "goedkoop": "{{ 'ja' if uur.start in goedkope_starttijden else 'nee' }}",
+                  "duur": "ja"
+                }{% if not loop.last %},{% endif %}
+              {% endfor %}
+              ]
+            {% else %}
+              []
+            {% endif %}
