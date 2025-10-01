@@ -49,7 +49,7 @@ template:
         state: >-
           {% set use_15_min = is_state('input_boolean.dynamisch_15_minuten', 'on') %}
           {% if use_15_min %}
-            {% set data = state_attr('sensor.nordpool_kwh_nl_eur_3_09_0', 'raw_today') or [] %}
+            {% set data = state_attr('sensor.<NORDPOOL>', 'raw_today') or [] %}
             {% set nowts = as_timestamp(now()) %}
             {% set current = namespace(val=None) %}
             {% for p in data %}
@@ -61,7 +61,7 @@ template:
             {% endfor %}
             {{ current.val if current.val is not none else 'unknown' }}
           {% else %}
-            {% set raw = state_attr('sensor.nordpool_kwh_nl_eur_3_09_0', 'raw_today') %}
+            {% set raw = state_attr('sensor.<NORDPOOL>', 'raw_today') %}
             {% set now = now() %}
             {% if raw %}
               {% set current_hour_values = raw 
@@ -72,16 +72,16 @@ template:
               {% if current_hour_values %}
                 {{ (current_hour_values | sum / current_hour_values | count) | round(5) }}
               {% else %}
-                {{ states('sensor.nordpool_kwh_nl_eur_3_09_0') }}
+                {{ states('sensor.<NORDPOOL>') }}
               {% endif %}
             {% else %}
-              {{ states('sensor.nordpool_kwh_nl_eur_3_09_0') }}
+              {{ states('sensor.<NORDPOOL>') }}
             {% endif %}
           {% endif %}
         attributes:
           raw_today: >
             {% set use_15_min = is_state('input_boolean.dynamisch_15_minuten', 'on') %}
-            {% set raw = state_attr('sensor.nordpool_kwh_nl_eur_3_09_0', 'raw_today') %}
+            {% set raw = state_attr('sensor.<NORDPOOL>', 'raw_today') %}
             {% if raw %}
               [
               {% if use_15_min %}
