@@ -49,9 +49,19 @@ template:
         state: >-
           {% set use_15_min = is_state('input_boolean.dynamisch_15_minuten', 'on') %}
           {% if use_15_min %}
-            {{ states('sensor.<NORDPOOL>') }}
+            {% set data = state_attr('sensor.nordpool_kwh_nl_eur_3_09_0', 'raw_today') or [] %}
+            {% set nowts = as_timestamp(now()) %}
+            {% set current = namespace(val=None) %}
+            {% for p in data %}
+              {% set s = as_timestamp(as_datetime(p.start)) %}
+              {% set e = as_timestamp(as_datetime(p.end)) %}
+              {% if nowts >= s and nowts < e %}
+                {% set current.val = (p.value) | round(5) %}
+              {% endif %}
+            {% endfor %}
+            {{ current.val if current.val is not none else 'unknown' }}
           {% else %}
-            {% set raw = state_attr('sensor.<NORDPOOL>', 'raw_today') %}
+            {% set raw = state_attr('sensor.nordpool_kwh_nl_eur_3_09_0', 'raw_today') %}
             {% set now = now() %}
             {% if raw %}
               {% set current_hour_values = raw 
@@ -62,50 +72,16 @@ template:
               {% if current_hour_values %}
                 {{ (current_hour_values | sum / current_hour_values | count) | round(5) }}
               {% else %}
-                {{ states('sensor.<NORDPOOL>') }}
+                {{ states('sensor.nordpool_kwh_nl_eur_3_09_0') }}
               {% endif %}
             {% else %}
-              {{ states('sensor.<NORDPOOL>') }}
+              {{ states('sensor.nordpool_kwh_nl_eur_3_09_0') }}
             {% endif %}
           {% endif %}
-
         attributes:
           raw_today: >
             {% set use_15_min = is_state('input_boolean.dynamisch_15_minuten', 'on') %}
-            {% set raw = state_attr('sensor.<NORDPOOL>', 'raw_today') %}
-            {% if raw %}
-              [
-              {% if use_15_min %}
-                {# Gebruik kwartierwaarden zonder groepering #}
-                {% for item in raw %}
-                  {
-                    "start": "{{ item.start.isoformat() }}",
-                    "end": "{{ item.end.isoformat() }}",
-                    "value": {{ item.value }}
-                  }{% if not loop.last %},{% endif %}
-                {% endfor %}
-              {% else %}
-                {# Groepeer per uur en gemiddeld #}
-                {% set hourly = raw | groupby('start.hour') %}
-                {% for hour_group in hourly %}
-                  {% set values = hour_group.list | map(attribute='value') | list %}
-                  {% set hour_start = hour_group.list[0].start.replace(minute=0, second=0, microsecond=0) %}
-                  {% set hour_end = hour_start + timedelta(hours=1) %}
-                  {
-                    "start": "{{ hour_start.isoformat() }}",
-                    "end": "{{ hour_end.isoformat() }}",
-                    "value": {{ (values | sum / values | count) | round(5) }}
-                  }{% if not loop.last %},{% endif %}
-                {% endfor %}
-              {% endif %}
-              ]
-            {% else %}
-              []
-            {% endif %}
-
-          raw_tomorrow: >
-            {% set use_15_min = is_state('input_boolean.dynamisch_15_minuten', 'on') %}
-            {% set raw = state_attr('sensor.<NORDPOOL>', 'raw_tomorrow') %}
+            {% set raw = state_attr('sensor.nordpool_kwh_nl_eur_3_09_0', 'raw_today') %}
             {% if raw %}
               [
               {% if use_15_min %}
