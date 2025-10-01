@@ -16,28 +16,28 @@ input_number:
   dynamisch_goedkoopste_x_periode:
     name: Dynamisch Goedkoopste X Periode
     min: 0
-    max: 24
+    max: 96
     step: 1
     mode: box
 
   dynamisch_duurste_x_periode:
     name: Dynamisch Duurste X Periode
     min: 0
-    max: 24
+    max: 96
     step: 1
     mode: box
 
   dynamisch_goedkoopste_x_periode_morgen:
     name: Dynamisch Goedkoopste X Periode Morgen
     min: 0
-    max: 24
+    max: 96
     step: 1
     mode: box
 
   dynamisch_duurste_x_periode_morgen:
     name: Dynamisch Duurste X Periode Morgen
     min: 0
-    max: 24
+    max: 96
     step: 1
     mode: box
 
@@ -46,7 +46,29 @@ template:
       - name: "Dynamisch Nordpool"
         unique_id: dynamisch_nordpool
         unit_of_measurement: "€/kWh"
-        state: "{{ states('sensor.<NORDPOOL>') }}"
+        state: >-
+          {% set use_15_min = is_state('input_boolean.dynamisch_15_minuten', 'on') %}
+          {% if use_15_min %}
+            {{ states('sensor.<NORDPOOL>') }}
+          {% else %}
+            {% set raw = state_attr('sensor.<NORDPOOL>', 'raw_today') %}
+            {% set now = now() %}
+            {% if raw %}
+              {% set current_hour_values = raw 
+                | selectattr('start', '>=', now.replace(minute=0, second=0, microsecond=0)) 
+                | selectattr('start', '<', now.replace(minute=0, second=0, microsecond=0) + timedelta(hours=1)) 
+                | map(attribute='value') 
+                | list %}
+              {% if current_hour_values %}
+                {{ (current_hour_values | sum / current_hour_values | count) | round(5) }}
+              {% else %}
+                {{ states('sensor.<NORDPOOL>') }}
+              {% endif %}
+            {% else %}
+              {{ states('sensor.<NORDPOOL>') }}
+            {% endif %}
+          {% endif %}
+
         attributes:
           raw_today: >
             {% set use_15_min = is_state('input_boolean.dynamisch_15_minuten', 'on') %}
@@ -494,28 +516,23 @@ template:
         unique_id: dynamisch_duurste_periode
         icon: mdi:progress-clock
         state: >
-          {% set prijzen = state_attr('sensor.dynamisch_goedkoopste_periode', 'raw_today') %}
-          {% set aantal_goedkoop = states('input_number.dynamisch_goedkoopste_x_periode') | int %}
+          {% set prijzen = state_attr('sensor.dynamisch_nordpool', 'raw_today') %}
           {% set aantal_duur = states('input_number.dynamisch_duurste_x_periode') | int %}
-          {% if prijzen is iterable and prijzen | count >= aantal_goedkoop %}
-            {% set prijzen_per_uur = prijzen | sort(attribute='value') %}
-            {% set goedkoopste_uren = prijzen_per_uur[:aantal_goedkoop] %}
-            {% set goedkope_starttijden = goedkoopste_uren | map(attribute='start') | list %}
-
-            {% if aantal_duur > 0 %}
-              {% set duurste_uren = prijzen_per_uur[-aantal_duur:] %}
-            {% else %}
-              {% set duurste_uren = prijzen | rejectattr('start', 'in', goedkope_starttijden) | list %}
-            {% endif %}
-
-            {% set dure_uren = duurste_uren | map(attribute='start') | map('as_datetime') | map(attribute='hour') | list %}
-            {% set huidige_uur = now().hour %}
-
-            {% if huidige_uur in dure_uren %}
-              Ja
-            {% else %}
-              Nee
-            {% endif %}
+          {% if prijzen is iterable and prijzen | count >= aantal_duur and aantal_duur > 0 %}
+          {% set prijzen_sorted = prijzen | sort(attribute='value') %}
+          {% set duurste_periodes = prijzen_sorted[-aantal_duur:] %}
+          {% set dure_starttijden = duurste_periodes | map(attribute='start') | list %}
+          {% set nu = now().astimezone() %}
+          {% set in_duur_blok = prijzen 
+            | selectattr('start', 'in', dure_starttijden) 
+            | selectattr('start', 'le', nu.isoformat()) 
+            | selectattr('end', 'gt', nu.isoformat()) 
+            | list %}
+          {% if in_duur_blok | length > 0 %}
+            Ja
+          {% else %}
+            Nee
+          {% endif %}
           {% else %}
             Onbekend
           {% endif %}
@@ -558,15 +575,20 @@ template:
           {% set prijzen = state_attr('sensor.dynamisch_nordpool', 'raw_today') %}
           {% set aantal_goedkoop = states('input_number.dynamisch_goedkoopste_x_periode') | int %}
           {% if prijzen is iterable and prijzen | count >= aantal_goedkoop %}
-            {% set prijzen_per_uur = prijzen | sort(attribute='value') %}
-            {% set goedkoopste_uren = prijzen_per_uur[:aantal_goedkoop] %}
-            {% set goedkope_uren = goedkoopste_uren | map(attribute='start') | map('as_datetime') | map(attribute='hour') | list %}
-            {% set huidige_uur = now().hour %}
-            {% if huidige_uur in goedkope_uren %}
-              Ja
-            {% else %}
-              Nee
-            {% endif %}
+          {% set prijzen_sorted = prijzen | sort(attribute='value') %}
+          {% set goedkoopste_periodes = prijzen_sorted[:aantal_goedkoop] %}
+          {% set goedkope_starttijden = goedkoopste_periodes | map(attribute='start') | list %}
+          {% set nu = now().astimezone() %}
+          {% set in_goedkoop_blok = prijzen 
+            | selectattr('start', 'in', goedkope_starttijden) 
+            | selectattr('start', 'le', nu.isoformat()) 
+            | selectattr('end', 'gt', nu.isoformat()) 
+            | list %}
+          {% if in_goedkoop_blok | length > 0 %}
+            Ja
+          {% else %}
+            Nee
+          {% endif %}
           {% else %}
             Onbekend
           {% endif %}
