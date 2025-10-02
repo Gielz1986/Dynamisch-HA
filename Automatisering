@@ -1,0 +1,31 @@
+alias: Dynamisch morgen naar vandaag
+description: ""
+triggers:
+  - at: "00:00:00"
+    trigger: time
+conditions: []
+actions:
+  - target:
+      entity_id: input_number.dynamisch_goedkoopste_x_periode
+    data:
+      value: >-
+        {{ states('input_number.dynamisch_goedkoopste_x_periode_morgen') | float
+        }}
+    action: input_number.set_value
+  - target:
+      entity_id: input_number.dynamisch_duurste_x_periode
+    data:
+      value: "{{ states('input_number.dynamisch_duurste_x_periode_morgen') | float }}"
+    action: input_number.set_value
+  - target:
+      entity_id: input_text.dynamisch_handmatige_periode
+    data:
+      value: "{{ states('input_text.dynamisch_handmatige_periode_morgen') }}"
+    action: input_text.set_value
+  - target:
+      entity_id:
+        - input_text.dynamisch_handmatige_periode_morgen
+    data:
+      value: ""
+    action: input_text.set_value
+mode: single
