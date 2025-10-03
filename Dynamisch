@@ -6,14 +6,14 @@ input_boolean:
 input_text:
   dynamisch_handmatige_periode:
     name: Dynamisch Handmatige Periode
-    icon: mdi:clock-edit-outline
-    max: 200
+    icon: mdi:view-grid
+    max: 250
     mode: text
 
   dynamisch_handmatige_periode_morgen:
     name: Dynamisch Handmatige Periode Morgen
-    icon: mdi:clock-edit-outline
-    max: 200
+    icon: mdi:view-grid
+    max: 250
     mode: text
 
 input_number:
@@ -28,7 +28,7 @@ input_number:
 
   dynamisch_goedkoopste_x_periode:
     name: Dynamisch Goedkoopste X Periode
-    icon: mdi:clock-edit-outline
+    icon: mdi:view-grid-plus
     min: 0
     max: 96
     step: 1
@@ -36,7 +36,7 @@ input_number:
 
   dynamisch_duurste_x_periode:
     name: Dynamisch Duurste X Periode
-    icon: mdi:clock-edit-outline
+    icon: mdi:view-grid-plus
     min: 0
     max: 96
     step: 1
@@ -44,7 +44,7 @@ input_number:
 
   dynamisch_goedkoopste_x_periode_morgen:
     name: Dynamisch Goedkoopste X Periode Morgen
-    icon: mdi:clock-edit-outline
+    icon: mdi:view-grid-plus
     min: 0
     max: 96
     step: 1
@@ -52,7 +52,7 @@ input_number:
 
   dynamisch_duurste_x_periode_morgen:
     name: Dynamisch Duurste X Periode Morgen
-    icon: mdi:clock-edit-outline
+    icon: mdi:view-grid-plus
     min: 0
     max: 96
     step: 1
