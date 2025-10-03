@@ -62,6 +62,7 @@ template:
   - sensor:
       - name: "Dynamisch Nordpool"
         unique_id: dynamisch_nordpool
+        icon: mdi:cash
         unit_of_measurement: "€/kWh"
         state: >-
           {% set nordpool = 'sensor.<NORDPOOL>' %}
