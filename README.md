@@ -1,6 +1,6 @@
 # ⚡ Dynamisch Energiebeheer (Home Assistant)
 
-Dit project bevat de configuratie voor het dynamisch aansturen van bijvoorbeeld batterijen, op basis van Nordpool energieprijzen binnen Home Assistant.
+Dit project bevat de configuratie voor het dynamisch aansturen van bijvoorbeeld batterijen, op basis van Nordpool energieprijzen binnen Home Assistant. Visueel aantrekkelijk met een gemakkelijke JA of NEE voor je eigen laad en ontlaad automatiseringen.
 
 ![Preview](Images/Preview.gif)
 
