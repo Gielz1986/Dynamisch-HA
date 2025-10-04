@@ -1,15 +1,15 @@
-# ⚡ Dynamisch Energiebeheer (Home Assistant)
+## ⚡ Dynamisch Energiebeheer (Home Assistant)
 
 Dit project bevat de configuratie voor het dynamisch aansturen van bijvoorbeeld batterijen, op basis van Nordpool energieprijzen binnen Home Assistant. Visueel aantrekkelijk met een gemakkelijke JA of NEE voor je eigen laad en ontlaad automatiseringen.
 
 ![Preview](Images/Preview.gif)
 
-## 📦 Entiteiten Configuratie
+### 📦 Entiteiten Configuratie
 
 Pas je `configuration.yaml` aan om de benodigde sensoren toe te voegen. Let op: je moet de `sensor.<NORDPOOL>` vervangen door je eigen Nordpool sensor.
 > Je vindt deze op 3 locaties bij de `template sensor dynamisch_nordpool`.
 
-## 🔁 Home Assistant herstarten
+### 🔁 Home Assistant herstarten
 
 Na een herstart van Home Assistant moeten de velden:
 
@@ -20,21 +20,21 @@ handmatig worden aangepast. Verwijder hierbij **`unknown`** eenmalig.
 
 ---
 
-### Resultaat
+#### Resultaat
 Je krijgt twee sensoren die aangeven of een periode **JA** (goedkoop) of **NEE** (duur) is. Op basis hiervan kun je automatisch bijvoorbeeld een batterij aansturen via je eigen automatiseringen. In de toekomst zal dit worden opgenomen in de zenSDK (Gielz).
 
 ![Preview](Images/Janee.JPG)
 
-### Attributen bekijken
+#### Attributen bekijken
 Je kunt op de indicatie-sensoren klikken om de volledige berekeningen en attributen in te zien. Hier staat ook de code voor de handmatige periode die je vervolgens kunt knippen en plakken om zelf een beetje aan te passen en te gebruiken in het handmatige periode veld.
 
 ![Preview](Images/Spread.JPG)
 
 ---
 
-## 📊 ApexCharts Weergave
+### 📊 ApexCharts Weergave
 
-### Vandaag
+#### Vandaag
 ```yaml
 type: custom:apexcharts-card
 stacked: true
@@ -157,7 +157,7 @@ series:
 
 ```
 
-### Morgen
+#### Morgen
 
 ```yaml
 type: custom:apexcharts-card
