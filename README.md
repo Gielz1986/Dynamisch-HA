@@ -26,6 +26,8 @@ Je krijgt twee sensoren die aangeven of een periode **JA** (goedkoop) of **NEE**
 ### Attributen bekijken
 Je kunt op de indicatie-sensoren klikken om de volledige berekeningen en attributen in te zien. Hier staat ook de code voor de handmatige periode die je vervolgens kunt knippen en plakken om zelf een beetje aan te passen en te gebruiken in het handmatige periode veld.
 
+![Preview](Images/Spread.JPG)
+
 ---
 
 ## 📊 ApexCharts Weergave
