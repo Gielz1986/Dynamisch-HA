@@ -1,4 +1,4 @@
-alias: Dynamisch morgen naar vandaag
+alias: Dynamisch (Gielz)
 description: ""
 triggers:
   - at: "00:00:00"
