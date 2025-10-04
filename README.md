@@ -6,7 +6,7 @@ Dit project bevat de configuratie voor het dynamisch aansturen van thuisbatterij
 
 ### 📦 Entiteiten Configuratie
 
-Pas je `configuration.yaml` aan om de benodigde sensoren toe te voegen. Let op: je moet de `sensor.<NORDPOOL>` vervangen door je eigen Nordpool sensor.
+Pas je `configuration.yaml` aan om de benodigde sensoren toe te voegen. Let op: je moet de `sensor.<NORDPOOL>` vervangen door je eigen Nordpool HACs sensor (kwartier/kwh tarieven).
 > Je vindt deze op 3 locaties bij de `template sensor dynamisch_nordpool`.
 
 ### 🔁 Home Assistant herstarten
