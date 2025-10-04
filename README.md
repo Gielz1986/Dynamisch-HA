@@ -45,10 +45,15 @@ experimental:
   color_threshold: true
 graph_span: 24h
 apex_config:
+  noData:
+    text: Vanaf 14:00 zijn de prijzen van morgen bekend.
   plotOptions:
     bar:
       columnWidth: 90%
   tooltip:
+    enabledOnSeries:
+      - 0
+    followCursor: true
     shared: true
     intersect: false
     enabled: true
@@ -139,7 +144,6 @@ series:
     curve: stepline
     opacity: 0.2
     type: column
-    stroke_width: 0
     name: Duur
     data_generator: |
       const data = entity.attributes["raw_today"];
@@ -150,6 +154,7 @@ series:
         const waarde = item.duur === "ja" ? 1 : 0;
         return [tijd, waarde];
       });
+
 ```
 
 ### Morgen
@@ -170,6 +175,9 @@ apex_config:
     bar:
       columnWidth: 90%
   tooltip:
+    enabledOnSeries:
+      - 0
+    followCursor: true
     shared: true
     intersect: false
     enabled: true
@@ -230,7 +238,7 @@ series:
         color: "#E76821"
       - value: 0.5
         color: "#DC182F"
-    name: Vandaag
+    name: Morgen
     show:
       in_header: false
       legend_value: false
@@ -271,5 +279,6 @@ series:
         const waarde = item.duur === "ja" ? 1 : 0;
         return [tijd, waarde];
       });
+
 
 ```
