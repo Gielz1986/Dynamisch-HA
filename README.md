@@ -21,7 +21,7 @@ handmatig worden aangepast. Verwijder hierbij **`unknown`** eenmalig.
 ---
 
 #### Resultaat
-Je krijgt twee sensoren die aangeven of een periode **JA** (goedkoop) of **NEE** (duur) is. Op basis hiervan kun je automatisch bijvoorbeeld een batterij aansturen via je eigen automatiseringen. In de toekomst zal dit worden opgenomen in de zenSDK (Gielz).
+Je krijgt twee sensoren die aangeven of een periode **JA** (goedkoop) of **NEE** (duur) is. Op basis hiervan kun je automatisch bijvoorbeeld een batterij aansturen via je eigen automatiseringen. In de toekomst zal dit worden opgenomen in https://github.com/Gielz1986/Zendure-zenSDK-HA
 
 ![Preview](Images/Janee.JPG)
 
