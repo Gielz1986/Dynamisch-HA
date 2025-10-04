@@ -23,6 +23,8 @@ handmatig worden aangepast. Verwijder hierbij **`unknown`** eenmalig.
 ### Resultaat
 Je krijgt twee sensoren die aangeven of een periode **JA** (goedkoop) of **NEE** (duur) is. Op basis hiervan kun je automatisch bijvoorbeeld een batterij aansturen via je eigen automatiseringen. In de toekomst zal dit worden opgenomen in de zenSDK (Gielz).
 
+![Preview](Images/Janee.JPG)
+
 ### Attributen bekijken
 Je kunt op de indicatie-sensoren klikken om de volledige berekeningen en attributen in te zien. Hier staat ook de code voor de handmatige periode die je vervolgens kunt knippen en plakken om zelf een beetje aan te passen en te gebruiken in het handmatige periode veld.
 
