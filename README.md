@@ -2,6 +2,8 @@
 
 Dit project bevat de configuratie voor het dynamisch aansturen van bijvoorbeeld batterijen, op basis van Nordpool energieprijzen binnen Home Assistant.
 
+![Preview](Images/Preview.gif)
+
 ## 📦 Entiteiten Configuratie
 
 Pas je `configuration.yaml` aan om de benodigde sensoren toe te voegen. Let op: je moet de `sensor.<NORDPOOL>` vervangen door je eigen Nordpool sensor.
