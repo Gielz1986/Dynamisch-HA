@@ -129,7 +129,6 @@ series:
         return [new Date(start["start"]).getTime(), entity.attributes.raw_today[index]["value"]];
       });
   - entity: sensor.dynamisch_goedkoopste_periode
-    yaxis_id: Goedkoop
     color: green
     curve: stepline
     opacity: 0.2
@@ -145,7 +144,6 @@ series:
         return [tijd, waarde];
       });
   - entity: sensor.dynamisch_goedkoopste_periode
-    yaxis_id: Goedkoop
     color: red
     curve: stepline
     opacity: 0.2
@@ -160,7 +158,6 @@ series:
         const waarde = item.duur === "ja" ? 1 : 0;
         return [tijd, waarde];
       });
-
 ```
 
 #### Morgen
@@ -254,7 +251,6 @@ series:
         return [new Date(start["start"]).getTime(), entity.attributes.raw_tomorrow[index]["value"]];
       });
   - entity: sensor.dynamisch_goedkoopste_periode
-    yaxis_id: Goedkoop
     color: green
     curve: stepline
     opacity: 0.2
@@ -270,7 +266,6 @@ series:
         return [tijd, waarde];
       });
   - entity: sensor.dynamisch_goedkoopste_periode
-    yaxis_id: Goedkoop
     color: red
     curve: stepline
     opacity: 0.2
