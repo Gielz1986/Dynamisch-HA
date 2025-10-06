@@ -13,8 +13,8 @@ Pas je `configuration.yaml` aan om de benodigde sensoren toe te voegen. Let op: 
 
 Na een herstart van Home Assistant moeten de velden:
 
-- `sensor.dynamisch_handmatige_periode`
-- `sensor.dynamisch_handmatige_periode_morgen`
+- `input_text.dynamisch_handmatige_periode`
+- `input_text.dynamisch_handmatige_periode_morgen`
 
 handmatig worden aangepast. Verwijder hierbij **`unknown`** eenmalig.
 
