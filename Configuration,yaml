@@ -29,7 +29,7 @@ input_number:
   dynamisch_goedkoopste_x_periode:
     name: Dynamisch Goedkoopste X Periode
     icon: mdi:view-grid-plus
-    min: 0
+    min: 1
     max: 96
     step: 1
     mode: box
@@ -37,7 +37,7 @@ input_number:
   dynamisch_duurste_x_periode:
     name: Dynamisch Duurste X Periode
     icon: mdi:view-grid-plus
-    min: 0
+    min: 1
     max: 96
     step: 1
     mode: box
@@ -45,7 +45,7 @@ input_number:
   dynamisch_goedkoopste_x_periode_morgen:
     name: Dynamisch Goedkoopste X Periode Morgen
     icon: mdi:view-grid-plus
-    min: 0
+    min: 1
     max: 96
     step: 1
     mode: box
@@ -53,7 +53,7 @@ input_number:
   dynamisch_duurste_x_periode_morgen:
     name: Dynamisch Duurste X Periode Morgen
     icon: mdi:view-grid-plus
-    min: 0
+    min: 1
     max: 96
     step: 1
     mode: box
