@@ -1,12 +1,12 @@
 ## ⚡ Dynamisch Energiebeheer (Home Assistant)
 
-Dit project bevat de configuratie voor het dynamisch aansturen van thuisbatterijen, op basis van Nordpool energieprijzen binnen Home Assistant. Visueel aantrekkelijk met een gemakkelijke JA of NEE voor je eigen laad en ontlaad automatiseringen.
+Dit project bevat de configuratie voor het dynamisch aansturen van thuisbatterijen, op basis van Nordpool energieprijzen (HACS) binnen Home Assistant. Visueel aantrekkelijk met een gemakkelijke JA of NEE voor je eigen laad en ontlaad automatiseringen.
 
 ![Preview](Images/Preview.gif)
 
 ### 📦 Entiteiten Configuratie
 
-Pas je `configuration.yaml` aan om de benodigde sensoren toe te voegen. Let op: je moet de `sensor.<NORDPOOL>` vervangen door je eigen Nordpool HACs sensor (kwartier/kwh tarieven).
+Pas je `configuration.yaml` aan om de benodigde sensoren toe te voegen. Let op: je moet de `sensor.<NORDPOOL>` vervangen door je eigen Nordpool (HACS) sensor (kwartier/kwh tarieven).
 > Je vindt deze op 3 locaties bij de `template sensor dynamisch_nordpool`.
 
 ### 🔁 Home Assistant herstarten
