@@ -1,4 +1,4 @@
-## ⚡ Dynamisch Energiebeheer (Home Assistant)
+## ⚡ Dynamisch Energiebeheer - Home Assistant
 
 Dit project bevat de configuratie voor het dynamisch aansturen van thuisbatterijen, op basis van Nordpool energieprijzen (HACS) binnen Home Assistant. Visueel aantrekkelijk met een gemakkelijke JA of NEE voor je eigen laad en ontlaad automatiseringen.
 
