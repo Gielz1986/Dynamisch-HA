@@ -8,6 +8,8 @@ Vind je dit project leuk en wil je mij steunen? Trakteer mij dan op een kopje ko
   <img src="https://github.com/Gielz1986/Zendure-zenSDK-HA/blob/main/Images/qr-code.png?raw=true" width="150" alt="Buy Me a Coffee">
 </a><br><br>
 
+![Preview](Images/Preview.gif)
+
 ### 📦 Entiteiten Configuratie
 
 Pas je `configuration.yaml` aan om de benodigde sensoren toe te voegen. Let op: je moet de `sensor.<NORDPOOL>` vervangen door je eigen Nordpool (HACS) sensor (kwartier/kwh tarieven).
