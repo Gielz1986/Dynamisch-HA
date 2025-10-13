@@ -2,6 +2,13 @@
 
 Dit project bevat de configuratie voor het dynamisch aansturen van thuisbatterijen, op basis van Nordpool energieprijzen (HACS) binnen Home Assistant. Visueel aantrekkelijk met een gemakkelijke JA of NEE voor je eigen laad en ontlaad automatiseringen.
 
+Vind je dit project tof en wil je me steunen? Trakteer me dan op een kopje koffie ☕️ – ik codeer beter met cafeïne!
+
+[![Buy Me a Coffee][buymecoffeebadge]][buymecoffee]
+
+[buymecoffee]: https://www.buymeacoffee.com/gielz
+[buymecoffeebadge]: https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png
+
 ![Preview](Images/Preview.gif)
 
 ### 📦 Entiteiten Configuratie
