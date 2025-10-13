@@ -51,8 +51,6 @@ experimental:
   color_threshold: true
 graph_span: 24h
 apex_config:
-  noData:
-    text: Vanaf 14:00 zijn de prijzen van morgen bekend.
   plotOptions:
     bar:
       columnWidth: 90%
