@@ -4,6 +4,12 @@ input_boolean:
     icon: mdi:clock-time-three-outline
 
 input_text:
+  dynamisch_nordpool_sensor:
+    name: Dynamisch Nordpool Sensor
+    icon: mdi:cash
+    max: 250
+    mode: text
+
   dynamisch_handmatige_periode:
     name: Dynamisch Handmatige Periode
     icon: mdi:view-grid
@@ -65,98 +71,128 @@ template:
         icon: mdi:cash
         unit_of_measurement: "€/kWh"
         state: >-
-          {% set nordpool = 'sensor.<NORDPOOL>' %}
-          {% set use_15_min = is_state('input_boolean.dynamisch_15_minuten', 'on') %}
-          {% if use_15_min %}
-            {% set data = state_attr(nordpool, 'raw_today') or [] %}
-            {% set nowts = as_timestamp(now()) %}
-            {% set current = namespace(val=None) %}
-            {% for p in data %}
-              {% set s = as_timestamp(as_datetime(p.start)) %}
-              {% set e = as_timestamp(as_datetime(p.end)) %}
-              {% if nowts >= s and nowts < e %}
-                {% set current.val = (p.value) | round(5) %}
-              {% endif %}
-            {% endfor %}
-            {{ current.val if current.val is not none else 'unknown' }}
+          {% set ingevuld = states('input_text.dynamisch_nordpool_sensor') %}
+          {% if ingevuld | lower | regex_match('^sensor\\..+') and states(ingevuld) not in ['unknown', 'unavailable', 'none'] %}
+            {% set nordpool = ingevuld %}
           {% else %}
-            {% set raw = state_attr(nordpool, 'raw_today') %}
-            {% set now = now() %}
-            {% if raw %}
-              {% set current_hour_values = raw 
-                | selectattr('start', '>=', now.replace(minute=0, second=0, microsecond=0)) 
-                | selectattr('start', '<', now.replace(minute=0, second=0, microsecond=0) + timedelta(hours=1)) 
-                | map(attribute='value') 
-                | list %}
-              {% if current_hour_values %}
-                {{ (current_hour_values | sum / current_hour_values | count) | round(5) }}
+            {% set nordpool = none %}
+          {% endif %}
+
+          {% if nordpool is not none %}
+            {% set use_15_min = is_state('input_boolean.dynamisch_15_minuten', 'on') %}
+            {% if use_15_min %}
+              {% set data = state_attr(nordpool, 'raw_today') or [] %}
+              {% set nowts = as_timestamp(now()) %}
+              {% set current = namespace(val=None) %}
+              {% for p in data %}
+                {% set s = as_timestamp(as_datetime(p.start)) %}
+                {% set e = as_timestamp(as_datetime(p.end)) %}
+                {% if nowts >= s and nowts < e %}
+                  {% set current.val = (p.value) | round(5) %}
+                {% endif %}
+              {% endfor %}
+              {{ current.val if current.val is not none else 'unknown' }}
+            {% else %}
+              {% set raw = state_attr(nordpool, 'raw_today') %}
+              {% set nu = now() %}
+              {% if raw %}
+                {% set current_hour_values = raw 
+                  | selectattr('start', '>=', nu.replace(minute=0, second=0, microsecond=0)) 
+                  | selectattr('start', '<', nu.replace(minute=0, second=0, microsecond=0) + timedelta(hours=1)) 
+                  | map(attribute='value') 
+                  | list %}
+                {% if current_hour_values %}
+                  {{ (current_hour_values | sum / current_hour_values | count) | round(5) }}
+                {% else %}
+                  {{ states(nordpool) }}
+                {% endif %}
               {% else %}
                 {{ states(nordpool) }}
               {% endif %}
-            {% else %}
-              {{ states(nordpool) }}
             {% endif %}
+          {% else %}
+            unknown
           {% endif %}
         attributes:
           raw_today: >-
-            {% set nordpool = 'sensor.<NORDPOOL>' %}
-            {% set use_15_min = is_state('input_boolean.dynamisch_15_minuten', 'on') %}
-            {% set raw = state_attr(nordpool, 'raw_today') %}
-            {% if raw %}
-              [
-              {% if use_15_min %}
-                {% for item in raw %}
-                  {
-                    "start": "{{ item.start.isoformat() }}",
-                    "end": "{{ item.end.isoformat() }}",
-                    "value": {{ item.value }}
-                  }{% if not loop.last %},{% endif %}
-                {% endfor %}
+            {% set ingevuld = states('input_text.dynamisch_nordpool_sensor') %}
+            {% if ingevuld | lower | regex_match('^sensor\\..+') and states(ingevuld) not in ['unknown', 'unavailable', 'none'] %}
+              {% set nordpool = ingevuld %}
+            {% else %}
+              {% set nordpool = none %}
+            {% endif %}
+
+            {% if nordpool is not none %}
+              {% set use_15_min = is_state('input_boolean.dynamisch_15_minuten', 'on') %}
+              {% set raw = state_attr(nordpool, 'raw_today') %}
+              {% if raw %}
+                [
+                {% if use_15_min %}
+                  {% for item in raw %}
+                    {
+                      "start": "{{ item.start.isoformat() }}",
+                      "end": "{{ item.end.isoformat() }}",
+                      "value": {{ item.value }}
+                    }{% if not loop.last %},{% endif %}
+                  {% endfor %}
+                {% else %}
+                  {% set hourly = raw | groupby('start.hour') %}
+                  {% for hour_group in hourly %}
+                    {% set values = hour_group.list | map(attribute='value') | list %}
+                    {% set hour_start = hour_group.list[0].start.replace(minute=0, second=0, microsecond=0) %}
+                    {% set hour_end = hour_start + timedelta(hours=1) %}
+                    {
+                      "start": "{{ hour_start.isoformat() }}",
+                      "end": "{{ hour_end.isoformat() }}",
+                      "value": {{ (values | sum / values | count) | round(5) }}
+                    }{% if not loop.last %},{% endif %}
+                  {% endfor %}
+                {% endif %}
+                ]
               {% else %}
-                {% set hourly = raw | groupby('start.hour') %}
-                {% for hour_group in hourly %}
-                  {% set values = hour_group.list | map(attribute='value') | list %}
-                  {% set hour_start = hour_group.list[0].start.replace(minute=0, second=0, microsecond=0) %}
-                  {% set hour_end = hour_start + timedelta(hours=1) %}
-                  {
-                    "start": "{{ hour_start.isoformat() }}",
-                    "end": "{{ hour_end.isoformat() }}",
-                    "value": {{ (values | sum / values | count) | round(5) }}
-                  }{% if not loop.last %},{% endif %}
-                {% endfor %}
+                []
               {% endif %}
-              ]
             {% else %}
               []
             {% endif %}
           raw_tomorrow: >-
-            {% set nordpool = 'sensor.<NORDPOOL>' %}
-            {% set use_15_min = is_state('input_boolean.dynamisch_15_minuten', 'on') %}
-            {% set raw = state_attr(nordpool, 'raw_tomorrow') %}
-            {% if raw %}
-              [
-              {% if use_15_min %}
-                {% for item in raw %}
-                  {
-                    "start": "{{ item.start.isoformat() }}",
-                    "end": "{{ item.end.isoformat() }}",
-                    "value": {{ item.value }}
-                  }{% if not loop.last %},{% endif %}
-                {% endfor %}
+            {% set ingevuld = states('input_text.dynamisch_nordpool_sensor') %}
+            {% if ingevuld | lower | regex_match('^sensor\\..+') and states(ingevuld) not in ['unknown', 'unavailable', 'none'] %}
+              {% set nordpool = ingevuld %}
+            {% else %}
+              {% set nordpool = none %}
+            {% endif %}
+
+            {% if nordpool is not none %}
+              {% set use_15_min = is_state('input_boolean.dynamisch_15_minuten', 'on') %}
+              {% set raw = state_attr(nordpool, 'raw_tomorrow') %}
+              {% if raw %}
+                [
+                {% if use_15_min %}
+                  {% for item in raw %}
+                    {
+                      "start": "{{ item.start.isoformat() }}",
+                      "end": "{{ item.end.isoformat() }}",
+                      "value": {{ item.value }}
+                    }{% if not loop.last %},{% endif %}
+                  {% endfor %}
+                {% else %}
+                  {% set hourly = raw | groupby('start.hour') %}
+                  {% for hour_group in hourly %}
+                    {% set values = hour_group.list | map(attribute='value') | list %}
+                    {% set hour_start = hour_group.list[0].start.replace(minute=0, second=0, microsecond=0) %}
+                    {% set hour_end = hour_start + timedelta(hours=1) %}
+                    {
+                      "start": "{{ hour_start.isoformat() }}",
+                      "end": "{{ hour_end.isoformat() }}",
+                      "value": {{ (values | sum / values | count) | round(5) }}
+                    }{% if not loop.last %},{% endif %}
+                  {% endfor %}
+                {% endif %}
+                ]
               {% else %}
-                {% set hourly = raw | groupby('start.hour') %}
-                {% for hour_group in hourly %}
-                  {% set values = hour_group.list | map(attribute='value') | list %}
-                  {% set hour_start = hour_group.list[0].start.replace(minute=0, second=0, microsecond=0) %}
-                  {% set hour_end = hour_start + timedelta(hours=1) %}
-                  {
-                    "start": "{{ hour_start.isoformat() }}",
-                    "end": "{{ hour_end.isoformat() }}",
-                    "value": {{ (values | sum / values | count) | round(5) }}
-                  }{% if not loop.last %},{% endif %}
-                {% endfor %}
+                []
               {% endif %}
-              ]
             {% else %}
               []
             {% endif %}
@@ -919,9 +955,9 @@ template:
               []
             {% endif %}
           gemiddelde_goedkoop: >
-            {% set prijzen = state_attr('sensor.dynamisch_goedkoopste_periode', 'raw_today') %}
-            {% set aantal_goedkoop = states('input_number.dynamisch_goedkoopste_x_periode') | int %}
-            {% set handmatige = states('input_text.dynamisch_handmatige_periode') %}
+            {% set prijzen = state_attr('sensor.dynamisch_goedkoopste_periode', 'raw_tomorrow') %}
+            {% set aantal_goedkoop = states('input_number.dynamisch_goedkoopste_x_periode_morgen') | int %}
+            {% set handmatige = states('input_text.dynamisch_handmatige_periode_morgen') %}
             {% set ns = namespace(uren=[]) %}
             {% if prijzen is iterable %}
               {% if handmatige | length > 0 %}
