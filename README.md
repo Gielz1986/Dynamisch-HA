@@ -12,17 +12,11 @@ Vind je dit project leuk en wil je mij steunen? Trakteer mij dan op een kopje ko
 
 ### 📦 Entiteiten Configuratie
 
-Pas je `configuration.yaml` aan om de benodigde sensoren toe te voegen. Let op: je moet de `sensor.<NORDPOOL>` vervangen door je eigen Nordpool (HACS) sensor (kwartier/kwh tarieven).
-> Je vindt deze op 3 locaties bij de `template sensor dynamisch_nordpool`.
+Pas je `configuration.yaml` aan om de benodigde sensoren toe te voegen.
 
 ### 🔁 Home Assistant herstarten
 
-Na een herstart van Home Assistant moeten de velden:
-
-- `input_text.dynamisch_handmatige_periode`
-- `input_text.dynamisch_handmatige_periode_morgen`
-
-handmatig worden aangepast. Verwijder hierbij **`unknown`** eenmalig.
+Na herstart vul je `input_text.dynamisch_nordpool_sensor` met je eigen Nordpool HACS sensor. Daarna maak je `input_text.dynamisch_handmatige_periode` en `input_text.dynamisch_handmatige_periode_morgen` leeg hier staat namelijk eenmalig **`unknown`**.
 
 ---
 
