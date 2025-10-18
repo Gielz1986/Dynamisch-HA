@@ -5,7 +5,7 @@ Dit project bevat de configuratie voor het dynamisch aansturen van thuisbatterij
 Vind je dit project leuk en wil je mij steunen? Trakteer mij dan op een kopje koffie ☕️ – ik codeer beter met cafeïne!
 
 <a href="https://www.buymeacoffee.com/gielz" target="_blank">
-  <img src="https://github.com/Gielz1986/Zendure-zenSDK-HA/blob/main/Images/qr-code.png?raw=true" width="150" alt="Buy Me a Coffee">
+  <img src="https://github.com/Gielz1986/Zendure-HA-zenSDK/blob/main/Images/bmc.png?raw=true" width="150" alt="Buy Me a Coffee">
 </a><br><br>
 
 ![Preview](Images/Preview.gif)
