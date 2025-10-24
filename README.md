@@ -5,9 +5,7 @@ Vind je dit project leuk en wil je mij steunen? Trakteer mij dan op een kopje ko
 
 <a href="https://www.buymeacoffee.com/gielz" target="_blank">
   <img src="https://github.com/Gielz1986/Zendure-HA-zenSDK/blob/main/Images/bmc.png?raw=true" width="150" alt="Buy Me a Coffee">
-</a><br><br>
-
-![Preview](Images/Preview.gif)
+</a><br>
 
 ## 1️⃣ Configuration.yaml
 
@@ -22,6 +20,11 @@ Vind je dit project leuk en wil je mij steunen? Trakteer mij dan op een kopje ko
 | `input_text.dynamisch_handmatige_periode`    | Verwijder **unknown** |
 | `input_text.dynamisch_handmatige_periode_morgen` | Verwijder **unknown** |
 
+![Preview](Images/Nordpool.png)
+
+*Zelf toe te voegen entiteiten op een dashboard.
+![Preview](Images/Preview.gif)
+
 ---
 
 #### ✅ Resultaat
@@ -34,13 +37,13 @@ Je kunt op de indicatie-sensoren klikken om de volledige berekeningen en attribu
 
 ![Preview](Images/Spread.JPG)
 
----
+<br><br>
 
 ## 2️⃣ Automatisering toevoegen
 
-Voeg de automatisering toe. deze zorgt ervoor dat hij de forecast en ingestelde periodes over zal zetten naar vandaag om 00:00. 
+Voeg de automatisering toe. deze zorgt ervoor dat hij de forecast (morgen) en ingestelde periodes over zal zetten naar vandaag om 00:00. 
 
----
+<br><br>
 
 ## #️⃣ Apexcharts
 Je kunt om het visueel aantrekkelijk te maken de Apexcharts `Nordpool_Apexcharts_Vandaag` en `Nordpool_Apexcharts_Morgen` gebruiken `(zie Github bestanden)`.
