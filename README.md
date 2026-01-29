@@ -32,8 +32,8 @@ Vind je dit project leuk en wil je mij steunen? Trakteer mij dan op een kopje ko
 | Configuratie           | Dynamisch Nordpool Sensor              | bijv. sensor.nordpool_kwh_nl_eur_3_09_0                      |
 | Dynamische Aansturing  | Dynamisch Nordpool                     | Nordpool prijzen in 15min en 1uur                            |
 |                        | Dynamisch 15 Minuten                   | Prijzen in 15 minuten                                        |
-|                        | Dynamisch Handmatige Periode           | bijv. **G11:00;D12:00;G15:00** of **Geen**                   |
-|                        | Dynamisch Handmatige Periode Morgen    | bijv. **G11:00;D12:00;G15:00** of **Geen**                   |
+|                        | Dynamisch Handmatige Periode           | bijvoorbeeld **G11:00;D12:00;G15:00** , **G03:00-07:00;D12:00-15:00;D18:00** of **Geen**                   |
+|                        | Dynamisch Handmatige Periode Morgen    | bijvoorbeeld **G11:00;D12:00;G15:00** , **G03:00-07:00;D12:00-15:00;D18:00** of **Geen**                   |
 |                        | Dynamisch Spread Indicatie             | Berekening spread                                            |
 |                        | Dynamisch Spread Indicatie NOM         | Berekening spread NOM, duurste na eerste laadactie           |
 |                        | Dynamisch Spread Indicatie Morgen      | Berekening spread                                            |
