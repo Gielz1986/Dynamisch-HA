@@ -46,7 +46,7 @@ input_number:
   dynamisch_goedkoopste_x_periode:
     name: Dynamisch Goedkoopste X Periode
     icon: mdi:view-grid-plus
-    min: 1
+    min: 0
     max: 96
     step: 1
     mode: box
@@ -54,7 +54,7 @@ input_number:
   dynamisch_duurste_x_periode:
     name: Dynamisch Duurste X Periode
     icon: mdi:view-grid-plus
-    min: 1
+    min: 0
     max: 96
     step: 1
     mode: box
@@ -62,7 +62,7 @@ input_number:
   dynamisch_goedkoopste_x_periode_morgen:
     name: Dynamisch Goedkoopste X Periode Morgen
     icon: mdi:view-grid-plus
-    min: 1
+    min: 0
     max: 96
     step: 1
     mode: box
@@ -70,7 +70,7 @@ input_number:
   dynamisch_duurste_x_periode_morgen:
     name: Dynamisch Duurste X Periode Morgen
     icon: mdi:view-grid-plus
-    min: 1
+    min: 0
     max: 96
     step: 1
     mode: box
@@ -527,7 +527,7 @@ template:
                   {% set tijden = item[1:] %}
                   {% if '-' in tijden %}
                     {% set start_str = tijden.split('-')[0] %}
-                    {% set eind_str  = tijden.split('-')[1] %}
+                    {% set eind_str = tijden.split('-')[1] %}
                     {% set range_block = True %}
                   {% else %}
                     {% set start_str = tijden %}
@@ -540,11 +540,10 @@ template:
                     {% set tz = dt_start.tzinfo %}
                     {% set start_dt = strptime(dag ~ ' ' ~ start_str, '%Y-%m-%d %H:%M').replace(tzinfo=tz) %}
                     {% if range_block %}
-                      {% set eind_dt  = strptime(dag ~ ' ' ~ eind_str, '%Y-%m-%d %H:%M').replace(tzinfo=tz) %}
+                      {% set eind_dt = strptime(dag ~ ' ' ~ eind_str, '%Y-%m-%d %H:%M').replace(tzinfo=tz) %}
                       {% if eind_dt <= start_dt %}
                         {% set eind_dt = eind_dt + timedelta(days=1) %}
                       {% endif %}
-                      {# Eindpunt inclusief #}
                       {% set eind_dt = eind_dt + timedelta(seconds=1) %}
                     {% else %}
                       {% set eind_dt = start_dt + default_delta %}
@@ -557,7 +556,11 @@ template:
               {% endfor %}
             {% else %}
               {% set prijzen_sorted = prijzen | sort(attribute='value') %}
-              {% set ns.dure_starttijden = prijzen_sorted[-aantal_duur:] | map(attribute='start') | list %}
+              {% if aantal_duur > 0 %}
+                {% set ns.dure_starttijden = prijzen_sorted[-aantal_duur:] | map(attribute='start') | list %}
+              {% else %}
+                {% set ns.dure_starttijden = [] %}
+              {% endif %}
             {% endif %}
             {% set nu = now().astimezone() %}
             {% set actief = prijzen
@@ -575,40 +578,14 @@ template:
             {% set handmatige = states('input_text.dynamisch_handmatige_periode') %}
             {% set aantal_goedkoop = states('input_number.dynamisch_goedkoopste_x_periode') | int %}
             {% set aantal_duur = states('input_number.dynamisch_duurste_x_periode') | int %}
-            {% set kwartier = is_state('input_boolean.dynamisch_15_minuten', 'on') %}
-            {% set default_delta = timedelta(minutes=15) if kwartier else timedelta(hours=1) %}
             {% if prijzen is iterable %}
               {% set ns = namespace(goede_starttijden=[], dure_starttijden=[]) %}
               {% if handmatige | length > 0 %}
                 {% for item in handmatige.split(';') %}
                   {% set type = item[0] %}
                   {% set tijden = item[1:] %}
-                  {% if '-' in tijden %}
-                    {# Range #}
-                    {% set start_str = tijden.split('-')[0] %}
-                    {% set eind_str  = tijden.split('-')[1] %}
-                    {% set range_block = True %}
-                  {% else %}
-                    {# Enkel tijdstip #}
-                    {% set start_str = tijden %}
-                    {% set range_block = False %}
-                  {% endif %}
                   {% for uur in prijzen %}
-                    {% set dt_start = uur.start | as_datetime %}
-                    {% set dt_end = uur.end | as_datetime %}
-                    {% set dag = dt_start.strftime('%Y-%m-%d') %}
-                    {% set tz = dt_start.tzinfo %}
-                    {% set start_dt = strptime(dag ~ ' ' ~ start_str, '%Y-%m-%d %H:%M').replace(tzinfo=tz) %}
-                    {% if range_block %}
-                      {% set eind_dt  = strptime(dag ~ ' ' ~ eind_str, '%Y-%m-%d %H:%M').replace(tzinfo=tz) %}
-                      {% if eind_dt <= start_dt %}
-                        {% set eind_dt = eind_dt + timedelta(days=1) %}
-                      {% endif %}
-                      {% set eind_dt = eind_dt + timedelta(seconds=1) %}
-                    {% else %}
-                      {% set eind_dt = start_dt + default_delta %}
-                    {% endif %}
-                    {% if dt_start < eind_dt and dt_end > start_dt %}
+                    {% if uur.start[11:16] == tijden %}
                       {% if type == 'G' %}
                         {% set ns.goede_starttijden = ns.goede_starttijden + [uur.start] %}
                       {% elif type == 'D' %}
@@ -620,7 +597,11 @@ template:
               {% else %}
                 {% set prijzen_sorted = prijzen | sort(attribute='value') %}
                 {% set ns.goede_starttijden = prijzen_sorted[:aantal_goedkoop] | map(attribute='start') | list %}
-                {% set ns.dure_starttijden = prijzen_sorted[-aantal_duur:] | map(attribute='start') | list %}
+                {% if aantal_duur > 0 %}
+                  {% set ns.dure_starttijden = prijzen_sorted[-aantal_duur:] | map(attribute='start') | list %}
+                {% else %}
+                  {% set ns.dure_starttijden = [] %}
+                {% endif %}
               {% endif %}
               [
               {% for uur in prijzen %}
@@ -695,7 +676,6 @@ template:
           {% else %}
             Onbekend
           {% endif %}
-
         attributes:
           raw_today: >
             {% set prijzen = state_attr('sensor.dynamisch_nordpool', 'raw_today') %}
@@ -745,7 +725,11 @@ template:
               {% else %}
                 {% set prijzen_sorted = prijzen | sort(attribute='value') %}
                 {% set ns.goedkope_starttijden = prijzen_sorted[:aantal_goedkoop] | map(attribute='start') | list %}
-                {% set ns.dure_starttijden = prijzen_sorted[-aantal_duur:] | map(attribute='start') | list %}
+                {% if aantal_duur > 0 %}
+                  {% set ns.dure_starttijden = prijzen_sorted[-aantal_duur:] | map(attribute='start') | list %}
+                {% else %}
+                  {% set ns.dure_starttijden = [] %}
+                {% endif %}
               {% endif %}
               [
               {% for uur in prijzen %}
@@ -809,7 +793,11 @@ template:
               {% else %}
                 {% set prijzen_sorted = prijzen | sort(attribute='value') %}
                 {% set ns.goedkope_starttijden = prijzen_sorted[:aantal_goedkoop] | map(attribute='start') | list %}
-                {% set ns.dure_starttijden = prijzen_sorted[-aantal_duur:] | map(attribute='start') | list %}
+                {% if aantal_duur > 0 %}
+                  {% set ns.dure_starttijden = prijzen_sorted[-aantal_duur:] | map(attribute='start') | list %}
+                {% else %}
+                  {% set ns.dure_starttijden = [] %}
+                {% endif %}
               {% endif %}
               [
               {% for uur in prijzen %}
@@ -827,62 +815,23 @@ template:
             {% endif %}
           duurste_na_eerste_goedkope: >
             {% set prijzen = state_attr('sensor.dynamisch_nordpool', 'raw_today') %}
-            {% set handmatige = states('input_text.dynamisch_handmatige_periode') %}
             {% set aantal_goedkoop = states('input_number.dynamisch_goedkoopste_x_periode') | int %}
             {% set aantal_duur = states('input_number.dynamisch_duurste_x_periode') | int %}
-            {% set kwartier = is_state('input_boolean.dynamisch_15_minuten', 'on') %}
-            {% set default_delta = timedelta(minutes=15) if kwartier else timedelta(hours=1) %}
             {% if prijzen is iterable %}
-              {% set ns = namespace(goedkope_starttijden=[], dure_starttijden=[]) %}
-              {% if handmatige | length > 0 %}
-                {% for item in handmatige.split(';') %}
-                  {% set type = item[0] %}
-                  {% set tijden = item[1:] %}
-                  {% if '-' in tijden %}
-                    {% set start_str = tijden.split('-')[0] %}
-                    {% set eind_str = tijden.split('-')[1] %}
-                    {% set range_block = True %}
-                  {% else %}
-                    {% set start_str = tijden %}
-                    {% set range_block = False %}
-                  {% endif %}
-                  {% for uur in prijzen %}
-                    {% set dt_start = uur.start | as_datetime %}
-                    {% set dt_end = uur.end | as_datetime %}
-                    {% set dag = dt_start.strftime('%Y-%m-%d') %}
-                    {% set tz = dt_start.tzinfo %}
-                    {% set start_dt = strptime(dag ~ ' ' ~ start_str, '%Y-%m-%d %H:%M').replace(tzinfo=tz) %}
-                    {% if range_block %}
-                      {% set eind_dt = strptime(dag ~ ' ' ~ eind_str, '%Y-%m-%d %H:%M').replace(tzinfo=tz) %}
-                      {% if eind_dt <= start_dt %}
-                        {% set eind_dt = eind_dt + timedelta(days=1) %}
-                      {% endif %}
-                      {% set eind_dt = eind_dt + timedelta(seconds=1) %}
-                    {% else %}
-                      {% set eind_dt = start_dt + default_delta %}
-                    {% endif %}
-                    {% if dt_start < eind_dt and dt_end > start_dt %}
-                      {% if type == 'G' %}
-                        {% set ns.goedkope_starttijden = ns.goedkope_starttijden + [uur.start] %}
-                      {% elif type == 'D' %}
-                        {% set ns.dure_starttijden = ns.dure_starttijden + [uur.start] %}
-                      {% endif %}
-                    {% endif %}
-                  {% endfor %}
-                {% endfor %}
+              {% set prijzen_sorted = prijzen | sort(attribute='value') %}
+              {% if aantal_duur > 0 %}
+                {% set dure_starttijden = prijzen_sorted[-aantal_duur:] | map(attribute='start') | list %}
               {% else %}
-                {% set prijzen_sorted = prijzen | sort(attribute='value') %}
-                {% set ns.goedkope_starttijden = prijzen_sorted[:aantal_goedkoop] | map(attribute='start') | list %}
-                {% set ns.dure_starttijden = prijzen_sorted[-aantal_duur:] | map(attribute='start') | list %}
+                {% set dure_starttijden = [] %}
               {% endif %}
-              {% set eerste_goedkoop = ns.goedkope_starttijden | map('as_datetime') | sort | first %}
+              {% set eerste_goedkoop = prijzen_sorted[:aantal_goedkoop] | map(attribute='start') | map('as_datetime') | sort | first %}
               [
-              {% for uur in prijzen if uur.start in ns.dure_starttijden and (uur.start | as_datetime > eerste_goedkoop) %}
+              {% for uur in prijzen if uur.start in dure_starttijden and (uur.start | as_datetime > eerste_goedkoop) %}
                 {
                   "start": "{{ uur.start }}",
                   "end": "{{ uur.end }}",
                   "value": {{ uur.value }},
-                  "goedkoop": "{{ 'ja' if uur.start in ns.goedkope_starttijden else 'nee' }}",
+                  "goedkoop": "{{ 'ja' if uur.start in prijzen_sorted[:aantal_goedkoop] | map(attribute='start') | list else 'nee' }}",
                   "duur": "ja"
                 }{% if not loop.last %},{% endif %}
               {% endfor %}
@@ -892,62 +841,23 @@ template:
             {% endif %}
           duurste_na_eerste_goedkope_morgen: >
             {% set prijzen = state_attr('sensor.dynamisch_nordpool', 'raw_tomorrow') %}
-            {% set handmatige = states('input_text.dynamisch_handmatige_periode_morgen') %}
             {% set aantal_goedkoop = states('input_number.dynamisch_goedkoopste_x_periode_morgen') | int %}
             {% set aantal_duur = states('input_number.dynamisch_duurste_x_periode_morgen') | int %}
-            {% set kwartier = is_state('input_boolean.dynamisch_15_minuten', 'on') %}
-            {% set default_delta = timedelta(minutes=15) if kwartier else timedelta(hours=1) %}
             {% if prijzen is iterable %}
-              {% set ns = namespace(goedkope_starttijden=[], dure_starttijden=[]) %}
-              {% if handmatige | length > 0 %}
-                {% for item in handmatige.split(';') %}
-                  {% set type = item[0] %}
-                  {% set tijden = item[1:] %}
-                  {% if '-' in tijden %}
-                    {% set start_str = tijden.split('-')[0] %}
-                    {% set eind_str = tijden.split('-')[1] %}
-                    {% set range_block = True %}
-                  {% else %}
-                    {% set start_str = tijden %}
-                    {% set range_block = False %}
-                  {% endif %}
-                  {% for uur in prijzen %}
-                    {% set dt_start = uur.start | as_datetime %}
-                    {% set dt_end = uur.end | as_datetime %}
-                    {% set dag = dt_start.strftime('%Y-%m-%d') %}
-                    {% set tz = dt_start.tzinfo %}
-                    {% set start_dt = strptime(dag ~ ' ' ~ start_str, '%Y-%m-%d %H:%M').replace(tzinfo=tz) %}
-                    {% if range_block %}
-                      {% set eind_dt = strptime(dag ~ ' ' ~ eind_str, '%Y-%m-%d %H:%M').replace(tzinfo=tz) %}
-                      {% if eind_dt <= start_dt %}
-                        {% set eind_dt = eind_dt + timedelta(days=1) %}
-                      {% endif %}
-                      {% set eind_dt = eind_dt + timedelta(seconds=1) %}
-                    {% else %}
-                      {% set eind_dt = start_dt + default_delta %}
-                    {% endif %}
-                    {% if dt_start < eind_dt and dt_end > start_dt %}
-                      {% if type == 'G' %}
-                        {% set ns.goedkope_starttijden = ns.goedkope_starttijden + [uur.start] %}
-                      {% elif type == 'D' %}
-                        {% set ns.dure_starttijden = ns.dure_starttijden + [uur.start] %}
-                      {% endif %}
-                    {% endif %}
-                  {% endfor %}
-                {% endfor %}
+              {% set prijzen_sorted = prijzen | sort(attribute='value') %}
+              {% if aantal_duur > 0 %}
+                {% set dure_starttijden = prijzen_sorted[-aantal_duur:] | map(attribute='start') | list %}
               {% else %}
-                {% set prijzen_sorted = prijzen | sort(attribute='value') %}
-                {% set ns.goedkope_starttijden = prijzen_sorted[:aantal_goedkoop] | map(attribute='start') | list %}
-                {% set ns.dure_starttijden = prijzen_sorted[-aantal_duur:] | map(attribute='start') | list %}
+                {% set dure_starttijden = [] %}
               {% endif %}
-              {% set eerste_goedkoop = ns.goedkope_starttijden | map('as_datetime') | sort | first %}
+              {% set eerste_goedkoop = prijzen_sorted[:aantal_goedkoop] | map(attribute='start') | map('as_datetime') | sort | first %}
               [
-              {% for uur in prijzen if uur.start in ns.dure_starttijden and (uur.start | as_datetime > eerste_goedkoop) %}
+              {% for uur in prijzen if uur.start in dure_starttijden and (uur.start | as_datetime > eerste_goedkoop) %}
                 {
                   "start": "{{ uur.start }}",
                   "end": "{{ uur.end }}",
                   "value": {{ uur.value }},
-                  "goedkoop": "{{ 'ja' if uur.start in ns.goedkope_starttijden else 'nee' }}",
+                  "goedkoop": "{{ 'ja' if uur.start in prijzen_sorted[:aantal_goedkoop] | map(attribute='start') | list else 'nee' }}",
                   "duur": "ja"
                 }{% if not loop.last %},{% endif %}
               {% endfor %}
