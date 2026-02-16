@@ -1,4 +1,4 @@
-type: custom:apexcharts-card
+type: custom:apexcharts-card 
 update_interval: 1sec
 experimental:
   color_threshold: true
