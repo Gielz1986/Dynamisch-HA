@@ -1,14 +1,12 @@
 type: custom:apexcharts-card
-stacked: true
-header:
-  show: true
-  title: Morgen
 experimental:
   color_threshold: true
 graph_span: 24h
 apex_config:
-  noData:
-    text: Vanaf 14:00 zijn de prijzen van morgen bekend.
+  markers:
+    size: 0
+    hover:
+      size: 0
   plotOptions:
     bar:
       columnWidth: 90%
@@ -27,14 +25,16 @@ apex_config:
     borderColor: "#332f2c"
     strokeDashArray: 0
   chart:
-    height: 200px
+    height: 175px
+    stacked: true
+    stackOnlyBar: true
   yaxis:
     - title:
         text: ""
       decimalsInFloat: 2
       min: 0
-      max: 1
-      tickAmount: 5
+      max: 0.8
+      tickAmount: 4
       forceNiceScale: false
       labels:
         style:
@@ -76,7 +76,22 @@ series:
         color: "#E76821"
       - value: 0.5
         color: "#DC182F"
-    name: Morgen
+    name: Vandaag
+    show:
+      in_header: false
+      legend_value: false
+      extremas: false
+    data_generator: |
+      return entity.attributes.raw_tomorrow.map((start, index) => {
+        return [new Date(start["start"]).getTime(), entity.attributes.raw_tomorrow[index]["value"]];
+      });
+  - entity: sensor.dynamisch_nordpool
+    yaxis_id: Prijs
+    type: column
+    color: "#ebebeb"
+    opacity: 0
+    float_precision: 3
+    name: Vandaag
     show:
       in_header: false
       legend_value: false
