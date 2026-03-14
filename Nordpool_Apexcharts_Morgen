@@ -1,8 +1,9 @@
 type: custom:apexcharts-card
-experimental:
-  color_threshold: true
+update_interval: 1sec
 graph_span: 24h
 apex_config:
+  noData:
+    text: Vanaf 14:00 zijn de prijzen van morgen bekend.
   markers:
     size: 0
     hover:
@@ -20,22 +21,24 @@ apex_config:
     x:
       format: HH:mm
       show: false
+    "y":
+      formatter: |
+        EVAL: (val) => `${val.toFixed(3)} €/kWh`
   grid:
     show: true
     borderColor: "#332f2c"
     strokeDashArray: 0
+    padding:
+      top: -10
   chart:
-    height: 175px
+    height: 150px
     stacked: true
     stackOnlyBar: true
   yaxis:
     - title:
         text: ""
       decimalsInFloat: 2
-      min: 0
-      max: 0.8
-      tickAmount: 4
-      forceNiceScale: false
+      forceNiceScale: true
       labels:
         style:
           colors: "#7b7c83"
@@ -52,81 +55,49 @@ span:
   start: day
   offset: +1d
 series:
-  - entity: sensor.dynamisch_nordpool
-    yaxis_id: Prijs
-    type: column
-    color: "#ebebeb"
-    float_precision: 3
-    color_threshold:
-      - value: 0
-        color: "#186ddc"
-      - value: 0.155
-        color: "#04822e"
-      - value: 0.2
-        color: "#12A141"
-      - value: 0.25
-        color: "#79B92C"
-      - value: 0.3
-        color: "#C4D81D"
-      - value: 0.35
-        color: "#F3DC0C"
-      - value: 0.4
-        color: "#EFA51E"
-      - value: 0.45
-        color: "#E76821"
-      - value: 0.5
-        color: "#DC182F"
+  - entity: sensor.dynamisch_goedkoopste_periode
     name: Morgen
+    type: column
+    float_precision: 3
+    color: "#e0e0e3"
     show:
       in_header: false
       legend_value: false
-      extremas: false
     data_generator: |
-      return entity.attributes.raw_tomorrow.map((start, index) => {
-        return [new Date(start["start"]).getTime(), entity.attributes.raw_tomorrow[index]["value"]];
-      });
-  - entity: sensor.dynamisch_nordpool
-    yaxis_id: Prijs
-    type: column
-    color: "#ebebeb"
-    opacity: 0
-    float_precision: 3
-    name: Morgen
-    show:
-      in_header: false
-      legend_value: false
-      extremas: true
-    data_generator: |
-      return entity.attributes.raw_tomorrow.map((start, index) => {
-        return [new Date(start["start"]).getTime(), entity.attributes.raw_tomorrow[index]["value"]];
-      });
-  - entity: sensor.dynamisch_goedkoopste_periode
-    color: green
-    curve: stepline
-    opacity: 0.2
-    type: column
-    name: Goedkoop
-    data_generator: |
-      const data = entity.attributes["raw_tomorrow"];
+      const data = entity.attributes.raw_tomorrow;
       if (!data) return [];
 
-      return data.map(item => {
-        const tijd = new Date(item.start).getTime();
-        const waarde = item.goedkoop === "ja" ? 1 : 0;
-        return [tijd, waarde];
-      });
-  - entity: sensor.dynamisch_goedkoopste_periode
-    color: red
-    curve: stepline
-    opacity: 0.2
-    type: column
-    name: Duur
-    data_generator: |
-      const data = entity.attributes["raw_tomorrow"];
-      if (!data) return [];
+      return data.map((item, index) => {
+        const tijdStart = new Date(item.start).getTime();
+        const duration = item.duration
+                          ? item.duration * 1000
+                          : (data[index + 1]
+                              ? new Date(data[index + 1].start).getTime() - tijdStart
+                              : 3600000);
+        const tijdEind = tijdStart + duration;
 
-      return data.map(item => {
-        const tijd = new Date(item.start).getTime();
-        const waarde = item.duur === "ja" ? 1 : 0;
-        return [tijd, waarde];
+        const prijs = item.value;
+        const verleden = Date.now() >= tijdEind;  // alleen volledig verlopen blokken
+
+        // Standaardkleur: #e0e0e3
+        let kleur = "rgba(224,224,227,1)";
+
+        if (prijs < 0) {
+          kleur = verleden ? "rgba(93,173,226,0.25)" : "rgba(93,173,226,1)";
+        }
+        else if (item.goedkoop === "ja") {
+          kleur = verleden ? "rgba(1,161,128,0.25)" : "rgba(1,161,128,1)";
+        }
+        else if (item.duur === "ja") {
+          kleur = verleden ? "rgba(197,59,44,0.25)" : "rgba(197,59,44,1)";
+        }
+        else {
+          kleur = verleden ? "rgba(224,224,227,0.25)" : "rgba(224,224,227,1)";
+        }
+
+        return {
+          x: tijdStart,
+          y: prijs,
+          fillColor: kleur
+        };
       });
