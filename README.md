@@ -3,11 +3,12 @@
 
 Dit project bevat de configuratie voor het dynamisch aansturen van thuisbatterijen, op basis van Nordpool energieprijzen (HACS) binnen Home Assistant. Visueel aantrekkelijk met een gemakkelijke JA of NEE voor je eigen laad en ontlaad automatiseringen.
 
-Vind je dit project leuk en wil je mij steunen? Trakteer mij dan op een kopje koffie ☕️ – ik codeer beter met cafeïne!
+Vind je dit project nuttig en wil je verdere ontwikkeling supporten? <br>
+Trakteer mij op een kopje koffie ☕️ en volg deze GitHub repository ⭐⭐⭐.
 
 <a href="https://www.buymeacoffee.com/gielz" target="_blank">
-  <img src="https://github.com/Gielz1986/Zendure-HA-zenSDK/blob/main/Images/bmc.png?raw=true" width="180" alt="Buy Me a Coffee">
-</a><br>
+  <img src="https://github.com/Gielz1986/Zendure-zenSDK-HA/blob/main/Images/bmc.png?raw=true" width="120" alt="Buy Me a Coffee">
+</a><br><br>
 
 ## 1️⃣ Configuration.yaml
 
@@ -24,26 +25,26 @@ Vind je dit project leuk en wil je mij steunen? Trakteer mij dan op een kopje ko
 
 ![Preview](Images/Nordpool.png)
 
-*Zelf toe te voegen entiteiten op een dashboard.
-![Preview](Images/Preview.gif)
+![Preview](Images/Dynamisch-140326.gif)
+<sub>*Zelf toe te voegen entiteiten op een dashboard.</sub>
 
-| Categorie              | Entiteiten                              | State                                                       |
-| ---------------------- | -------------------------------------- | ------------------------------------------------------------ |
-| Configuratie           | Dynamisch Nordpool Sensor              | bijv. sensor.nordpool_kwh_nl_eur_3_09_0                      |
-| Dynamische Aansturing  | Dynamisch Nordpool                     | Nordpool prijzen in 15min en 1uur                            |
-|                        | Dynamisch 15 Minuten                   | Prijzen in 15 minuten                                        |
-|                        | Dynamisch Handmatige Periode           | bijvoorbeeld **G11:00;D12:00;G15:00** of **G11:00-13:00**                   |
-|                        | Dynamisch Handmatige Periode Morgen    | bijvoorbeeld **G11:00;D12:00;G15:00** of **G11:00-13:00**                   |
-|                        | Dynamisch Spread Indicatie             | Berekening spread                                            |
-|                        | Dynamisch Spread Indicatie NOM         | Berekening spread NOM, duurste na eerste laadactie           |
-|                        | Dynamisch Spread Indicatie Morgen      | Berekening spread                                            |
-|                        | Dynamisch Spread Indicatie NOM Morgen  | Berekening spread NOM, duurste na eerste laadactie           |
-|                        | Dynamisch Goedkoopste Periode          | Ja of Nee                                                    |
-|                        | Dynamisch Duurste Periode              | Ja of Nee                                                    |
-|                        | Dynamisch Goedkoopste X Periode        | 0-96                                                        |
-|                        | Dynamisch Duurste X Periode            | 0-96                                                         |
-|                        | Dynamisch Goedkoopste X Periode Morgen | 0-96                                                        |
-|                        | Dynamisch Duurste X Periode Morgen     | 0-96                                                         |
+| Entiteiten                              | Informatie                                                      |
+| -------------------------------------- | ------------------------------------------------------------ |
+| Dynamisch Nordpool Sensor              | bijvoorbeeld **sensor.nordpool_kwh_nl_eur_3_09_0  **                    |
+| Dynamisch Nordpool                     | Nordpool prijzen in 15min en 1uur                            |
+| Dynamisch 15 Minuten                   | Prijzen in 15 minuten                                        |
+| Dynamisch Handmatige Periode           | bijvoorbeeld **G11:00;D12:00;G15:00** of **G11:00-13:00**                   |
+| Dynamisch Handmatige Periode Morgen    | bijvoorbeeld **G11:00;D12:00;G15:00** of **G11:00-13:00**                   |
+| Dynamisch Spread Indicatie             | Berekening spread                                            |
+| Dynamisch Spread Indicatie NOM         | Berekening spread NOM, duurste na eerste laadactie           |
+| Dynamisch Spread Indicatie Morgen      | Berekening spread                                            |
+| Dynamisch Spread Indicatie NOM Morgen  | Berekening spread NOM, duurste na eerste laadactie           |
+| Dynamisch Goedkoopste Periode          | Ja of Nee                                                    |
+| Dynamisch Duurste Periode              | Ja of Nee                                                    |
+| Dynamisch Goedkoopste X Periode        | 0-96                                                        |
+| Dynamisch Duurste X Periode            | 0-96                                                         |
+| Dynamisch Goedkoopste X Periode Morgen | 0-96                                                        |
+| Dynamisch Duurste X Periode Morgen     | 0-96                                                         |
 
 ---
 
