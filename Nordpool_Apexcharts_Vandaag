@@ -1,0 +1,101 @@
+type: custom:apexcharts-card
+update_interval: 1sec
+graph_span: 24h
+apex_config:
+  markers:
+    size: 0
+    hover:
+      size: 0
+  plotOptions:
+    bar:
+      columnWidth: 90%
+  tooltip:
+    enabledOnSeries:
+      - 0
+    followCursor: true
+    shared: true
+    intersect: false
+    enabled: true
+    x:
+      format: HH:mm
+      show: false
+    "y":
+      formatter: |
+        EVAL: (val) => `${val.toFixed(3)} €/kWh`
+  grid:
+    show: true
+    borderColor: "#332f2c"
+    strokeDashArray: 0
+    padding:
+      top: -10
+  chart:
+    height: 150px
+    stacked: true
+    stackOnlyBar: true
+  yaxis:
+    - title:
+        text: ""
+      decimalsInFloat: 2
+      forceNiceScale: true
+      labels:
+        style:
+          colors: "#7b7c83"
+  xaxis:
+    labels:
+      show: false
+    axisTicks:
+      show: false
+    axisBorder:
+      color: "#616269"
+  legend:
+    show: false
+span:
+  start: day
+series:
+  - entity: sensor.dynamisch_goedkoopste_periode
+    name: Vandaag
+    type: column
+    float_precision: 3
+    color: "#e0e0e3"
+    show:
+      in_header: false
+      legend_value: false
+      extremas: false
+    data_generator: |
+      const data = entity.attributes.raw_today;
+      if (!data) return [];
+
+      return data.map((item, index) => {
+        const tijdStart = new Date(item.start).getTime();
+        const duration = item.duration
+                          ? item.duration * 1000
+                          : (data[index + 1]
+                              ? new Date(data[index + 1].start).getTime() - tijdStart
+                              : 3600000);
+        const tijdEind = tijdStart + duration;
+
+        const prijs = item.value;
+        const verleden = Date.now() >= tijdEind;  // alleen volledig verlopen blokken
+
+        // Standaardkleur: #e0e0e3
+        let kleur = "rgba(224,224,227,1)";
+
+        if (prijs < 0) {
+          kleur = verleden ? "rgba(93,173,226,0.25)" : "rgba(93,173,226,1)";
+        }
+        else if (item.goedkoop === "ja") {
+          kleur = verleden ? "rgba(1,161,128,0.25)" : "rgba(1,161,128,1)";
+        }
+        else if (item.duur === "ja") {
+          kleur = verleden ? "rgba(197,59,44,0.25)" : "rgba(197,59,44,1)";
+        }
+        else {
+          kleur = verleden ? "rgba(224,224,227,0.25)" : "rgba(224,224,227,1)";
+        }
+
+        return {
+          x: tijdStart,
+          y: prijs,
+          fillColor: kleur
+        };
+      });
