@@ -56,15 +56,15 @@ Je krijgt twee sensoren die aangeven of een periode **JA** (goedkoop) of **NEE**
 #### ✅ Attributen bekijken
 Je kunt op de indicatie-sensoren klikken om de volledige berekeningen en attributen in te zien. Hier staat ook de code voor de handmatige periode die je vervolgens kunt knippen en plakken om zelf een beetje aan te passen en te gebruiken in het handmatige periode veld.
 
-![Preview](Images/Spread.JPG)
+![Preview](Images/Spread-140326.png)
 
-<br><br>
+<br>
 
 ## 2️⃣ Automatisering toevoegen
 
 Voeg de automatisering toe. deze zorgt ervoor dat hij de forecast (morgen) en ingestelde periodes over zal zetten naar vandaag om 00:00. 
 
-<br><br>
+<br>
 
 ## #️⃣ Apexcharts
 Je kunt om het visueel aantrekkelijk te maken de Apexcharts `Nordpool_Apexcharts_Vandaag` en `Nordpool_Apexcharts_Morgen` gebruiken `(zie Github bestanden)`.
