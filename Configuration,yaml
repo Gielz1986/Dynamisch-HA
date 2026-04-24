@@ -215,7 +215,7 @@ template:
               0
             {% endif %}
           min_tomorrow: >-
-            {% set data = state_attr('sensor.dynamisch_nordpool','raw_today') %}
+            {% set data = state_attr('sensor.dynamisch_nordpool','raw_tomorrow') %}
             {% if data %}
             {{ data | map(attribute='value') | min | round(5) }}
             {% else %}
