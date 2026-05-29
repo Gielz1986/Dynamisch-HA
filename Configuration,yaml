@@ -122,7 +122,7 @@ template:
               {% endif %}
             {% endif %}
           {% else %}
-            unknown
+            0
           {% endif %}
         attributes:
           raw_today: >-
@@ -235,7 +235,7 @@ template:
             {% else %}
               0
             {% endif %}
-            
+
       - name: "Dynamisch Spread Indicatie"
         unique_id: dynamisch_spread_indicatie
         icon: mdi:percent-box
@@ -840,14 +840,16 @@ template:
               []
             {% endif %}
           duurste_na_eerste_goedkope: >
-            {% set prijzen = state_attr('sensor.dynamisch_goedkoopste_periode','raw_today') %}
-            {% if prijzen %}
-              {% set eerste_goedkoop = prijzen
-                | selectattr('goedkoop','eq','ja')
-                | map(attribute='start')
-                | map('as_datetime')
-                | sort
-                | first %}
+            {% set prijzen = state_attr('sensor.dynamisch_goedkoopste_periode','raw_today') or [] %}
+            {% set goedkope = prijzen
+              | selectattr('goedkoop','eq','ja')
+              | map(attribute='start')
+              | map('as_datetime')
+              | select('!=', None)
+              | sort
+              | list %}
+            {% set eerste_goedkoop = goedkope | first if goedkope else none %}
+            {% if prijzen and eerste_goedkoop %}
               [
               {% for uur in prijzen
                 if uur.duur == 'ja'
@@ -866,15 +868,16 @@ template:
               []
             {% endif %}
           duurste_na_eerste_goedkope_morgen: >
-            {% set prijzen = state_attr('sensor.dynamisch_goedkoopste_periode','raw_tomorrow') %}
-
-            {% if prijzen %}
-              {% set eerste_goedkoop = prijzen
-                | selectattr('goedkoop','eq','ja')
-                | map(attribute='start')
-                | map('as_datetime')
-                | sort
-                | first %}
+            {% set prijzen = state_attr('sensor.dynamisch_goedkoopste_periode','raw_tomorrow') or [] %}
+            {% set goedkope = prijzen
+              | selectattr('goedkoop','eq','ja')
+              | map(attribute='start')
+              | map('as_datetime')
+              | select('!=', None)
+              | sort
+              | list %}
+            {% set eerste_goedkoop = goedkope | first if goedkope else none %}
+            {% if prijzen and eerste_goedkoop %}
               [
               {% for uur in prijzen
                 if uur.duur == 'ja'
@@ -892,4 +895,5 @@ template:
             {% else %}
               []
             {% endif %}
+
 
